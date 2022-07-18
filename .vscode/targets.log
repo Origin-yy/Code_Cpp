@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Jul 18 19:15:24 2022
+# Make data base, printed on Mon Jul 18 19:39:49 2022
 
 # Variables
 
@@ -39,7 +41,7 @@ GDMSESSION = ubuntu
 # environment
 XMODIFIERS = @im=fcitx
 # makefile
-CURDIR := /home/yuanye/my_code/Code_Cpp
+CURDIR := /home/yuanye/Code/Code_Cpp
 # makefile
 SHELL = /bin/sh
 # environment
@@ -115,7 +117,7 @@ GTK_IM_MODULE = fcitx
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-PWD = /home/yuanye/my_code/Code_Cpp
+PWD = /home/yuanye/Code/Code_Cpp
 # default
 .LOADED := 
 # environment
@@ -157,7 +159,7 @@ SHLVL = 0
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-21bd572a-4bef-4a96-be92-92cdc9519a99.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0609eab7-ae7d-4a41-900b-5a2090e7a265.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -285,8 +287,6 @@ GNUmakefile:
 
 # files hash-table stats:
  
-make: *** No rule to make target 'all'.  Stop.
-
 # Load=6/1024=1%, Rehash=0, Collisions=0/15=0%
 # VPATH Search Paths
 
@@ -300,6 +300,6 @@ make: *** No rule to make target 'all'.  Stop.
 # strcache performance: lookups = 18 / hit rate = 16%
 # hash-table stats:
 # Load=15/8192=0%, Rehash=0, Collisions=1/18=6%
-# Finished Make data base on Mon Jul 18 19:15:25 2022
+# Finished Make data base on Mon Jul 18 19:39:49 2022
 
  
