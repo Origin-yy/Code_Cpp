@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Jul 18 19:39:49 2022
+# Make data base, printed on Tue Jul 19 11:40:43 2022
 
 # Variables
 
@@ -26,8 +26,6 @@ DESKTOP_SESSION = ubuntu
 XDG_SESSION_CLASS = user
 # environment
 XDG_SESSION_TYPE = x11
-# environment
-VSCODE_LOG_NATIVE = false
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
@@ -45,11 +43,11 @@ CURDIR := /home/yuanye/Code/Code_Cpp
 # makefile
 SHELL = /bin/sh
 # environment
-VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"bbca1a7059cee8a1b93da8947fee1c4f.zh-cn","_translationsConfigFile":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/tcf.json","_cacheRoot":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn","_resolvedLanguagePackCoreLocation":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/4af164ea3a06f701fe3e89a2bcbb421d2026b68f","_corruptedFile":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/corrupted.info","_languagePackSupport":true}
+VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{"*":"zh-cn"},"_languagePackId":"bbca1a7059cee8a1b93da8947fee1c4f.zh-cn","_translationsConfigFile":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/tcf.json","_cacheRoot":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn","_resolvedLanguagePackCoreLocation":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/3b889b090b5ad5793f524b5d1d39fda662b96a2a","_corruptedFile":"/home/yuanye/.config/Code/clp/bbca1a7059cee8a1b93da8947fee1c4f.zh-cn/corrupted.info","_languagePackSupport":true}
 # environment
 _ = /usr/share/code/code
 # environment
-JOURNAL_STREAM = 8:57439
+JOURNAL_STREAM = 8:53662
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # makefile
@@ -67,9 +65,7 @@ XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/d
 # environment
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
-VSCODE_VERBOSE_LOGGING = true
-# environment
-MANAGERPID = 2143
+MANAGERPID = 2141
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
@@ -87,17 +83,15 @@ GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
 GJS_DEBUG_OUTPUT = stderr
 # environment
-SESSION_MANAGER = local/origin:@/tmp/.ICE-unix/2476,unix/origin:/tmp/.ICE-unix/2476
+SESSION_MANAGER = local/origin:@/tmp/.ICE-unix/2466,unix/origin:/tmp/.ICE-unix/2466
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
-VSCODE_LOG_STACK = false
-# environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = d46eff7fa5a34aad99a09dd91fd1dd15
+INVOCATION_ID = 04e10a08cfea44f08f78a15fdcebe2aa
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -107,7 +101,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 347952
+GIO_LAUNCHED_DESKTOP_FILE_PID = 47888
 # automatic
 %F = $(notdir $%)
 # environment
@@ -115,13 +109,11 @@ DISPLAY = :1
 # environment
 GTK_IM_MODULE = fcitx
 # environment
-VSCODE_PIPE_LOGGING = true
-# environment
 PWD = /home/yuanye/Code/Code_Cpp
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2394
+SSH_AGENT_PID = 2384
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -133,7 +125,7 @@ HOME = /home/yuanye
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/yuanye/.config/Code/CachedData/4af164ea3a06f701fe3e89a2bcbb421d2026b68f
+VSCODE_CODE_CACHE_PATH = /home/yuanye/.config/Code/CachedData/3b889b090b5ad5793f524b5d1d39fda662b96a2a
 # environment
 LOGNAME = yuanye
 # environment
@@ -158,8 +150,6 @@ QT_IM_MODULE = fcitx
 SHLVL = 0
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
-# environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0609eab7-ae7d-4a41-900b-5a2090e7a265.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -183,7 +173,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = zh_CN:zh:en_US:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-fade6eab-1.68.0-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-fade6eab-1.69.2-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -231,9 +221,9 @@ LC_ADDRESS = zh_CN.UTF-8
 # environment
 LANG = C
 # environment
-VSCODE_PID = 347952
+VSCODE_PID = 47888
 # variable set hash-table stats:
-# Load=110/1024=11%, Rehash=0, Collisions=18/132=14%
+# Load=105/1024=10%, Rehash=0, Collisions=17/127=13%
 
 # Pattern-specific Variable Values
 
@@ -286,7 +276,6 @@ GNUmakefile:
 #  Failed to be updated.
 
 # files hash-table stats:
- 
 # Load=6/1024=1%, Rehash=0, Collisions=0/15=0%
 # VPATH Search Paths
 
@@ -296,10 +285,11 @@ GNUmakefile:
 
 # strcache buffers: 1 (0) / strings = 15 / storage = 133 B / avg = 8 B
 # current buf: size = 8162 B / used = 133 B / count = 15 / avg = 8 B
+ 
 
 # strcache performance: lookups = 18 / hit rate = 16%
 # hash-table stats:
 # Load=15/8192=0%, Rehash=0, Collisions=1/18=6%
-# Finished Make data base on Mon Jul 18 19:39:49 2022
+# Finished Make data base on Tue Jul 19 11:40:43 2022
 
  
