@@ -1,3 +1,4 @@
+#include <asm-generic/errno.h>
 #include <iostream>
 #include <string>
 #include <netinet/in.h>
@@ -8,10 +9,12 @@
 #include <cstdlib>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <cstring>
 
 using namespace std;
 
 #define BACKLOG 5  //listen的第二个参数，listen后为accept就收到connect的连接的数量的上限，之内立刻连接，之外阻塞
+#define TIME    5  //read和write的超时时间
 
 class TcpSocket{
     private:
@@ -92,64 +95,104 @@ class TcpSocket{
         }
         return true;
     }
-    ssize_t readn(void* buf, size_t n){
-        ssize_t numread;
-        size_t totread;
-        char *p = static_cast<char*>(buf);
-        for(totread = 0; totread < n;){
-            numread = read(sockfd, p, n - totread);
-            if(numread == -1){
-                if(errno == EINTR)
+    int write_timeout(string& msg, size_t n) {
+        //设置超时时间
+        fd_set wSet;
+        FD_ZERO(&wSet);
+        FD_SET(sockfd, &wSet);
+    
+        struct timeval timeout;
+        memset(&timeout, 0, sizeof(timeout));
+        timeout.tv_sec = TIME;
+        timeout.tv_usec = 0;
+        // select加超时，阻塞并等待写就绪
+        int r;
+        while (1) {
+            r = select(sockfd + 1, NULL, &wSet, NULL, &timeout);
+            if (r < 0) {
+                if (errno == EINTR){
                     continue;
-                else
-                    return -1;
-            }
-            totread += numread;
-            p += numread;
-        }
-        return totread;
-    }
-    ssize_t writen(int fd, const void *buf, size_t n) {
-        ssize_t numwriten;
-        size_t totwriten;
-        const char *p = static_cast<const char*>(buf);
-        for (totwriten = 0; totwriten < n;) {
-            numwriten = write(fd, p, n - totwriten);
-
-            if (numwriten <= 0) {
-            if (numwriten == -1 && errno == EINTR)
-                continue;
-            else
+                }
+                return r;
+            } else if (r == 0) {
+                errno = ETIMEDOUT; //设置errno为超时
                 return -1;
+            } else {
+                break;
+            }
         }
-        totwriten += numwriten;
-        p += numwriten;
-        }
-        return totwriten;
-    }
-    int recvMsg(string& buf){
-        int len = 0;
-        readn((char*)&len, sizeof(int));
-        len = ntohl(len);
-        printf("接收到的 数据块大小 %d\n",len);
-        int Len = readn(data,len);
-        if(Len == 0)
-        { 
-            printf("对方断开链接\n");
-            close(sockfd);    
-        }
-        else if(len != Len)
-        {
-            printf("数据接收失败\n");
-        }
-        data[len] = '\0';
-        *msg = data;
-        return Len;
+        //开写
+        int writeNum;
+        void* buf = malloc(n+1);
+        writeNum = write(sockfd, buf, n);
+        msg = static_cast<string>(static_cast<const char*>(buf));
+        return writeNum;
     }
 
+    int read_timeout(string& msg, size_t n) {
+        //设置超时时间
+        fd_set rSet;
+        FD_ZERO(&rSet);
+        FD_SET(sockfd, &rSet);
+    
+        struct timeval timeout;
+        memset(&timeout, 0, sizeof(timeout));
+        timeout.tv_sec = TIME;
+        timeout.tv_usec = 0;
+        // select加上超时,并阻塞等待读就绪
+        int r;
+        while (1) {
+            r = select(sockfd + 1, &rSet, NULL, NULL, &timeout);
+            if (r < 0) {
+                if (errno == EINTR){
+                    continue;
+                }
+                return r;
+            } else if (r == 0) {
+                errno = ETIMEDOUT;
+                return -1;
+            } else {
+                break;
+            }
+        }
+        //开读
+        int readnum;
+        void* buf = malloc(n+1);
+        readnum = read(sockfd, buf, n);
+        msg = static_cast<string>(static_cast<const char*>(buf));
+        return readnum;
+    }
 
-
-
+    int sendmsg(string& msg){
+        string buf = msg + to_string(htonl(msg.size()));
+        int ret;
+        ret = write_timeout(buf, buf.size());
+        if(ret < 0){
+            if(errno == ETIMEDOUT){
+                cout << "Connection is broken" << endl;
+            }else{
+                perror("sendmsg() error.\n");
+                Close();
+            }
+        }
+        return ret;
+    }
+    int recvmsg(string& msg){
+        string len;
+        int ret = read_timeout(len, sizeof(int));
+        int lenth = stoi(len);
+        
+        ret = read_timeout(msg, lenth);
+         if(ret < 0){
+            if(errno == ETIMEDOUT){
+                cout << "Connection is broken" << endl;
+            }else{
+                perror("recvmsg() error.\n");
+                Close();
+            }
+        }
+        return ret;
+    }
     bool Close(){
         if(sockfd > 0){
             close(sockfd);
