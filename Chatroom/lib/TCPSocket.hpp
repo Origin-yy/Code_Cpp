@@ -1,3 +1,6 @@
+#ifndef TCP_SOCKET_H
+#define TCP_SOCKET_H
+
 #include <asm-generic/errno.h>
 #include <iostream>
 #include <string>
@@ -203,3 +206,5 @@ class TcpSocket{
         }
     }
 };
+
+#endif  
