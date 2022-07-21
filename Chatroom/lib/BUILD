@@ -14,8 +14,8 @@ cc_library(
 )
 
 cc_binary(
-    name = "test",
-    srcs = ["test.cc"],
+    name = "testThreadPool",
+    srcs = ["testThreadPool.cc"],
     deps = [
         ":ThreadPool",
     ],
