@@ -1,17 +1,17 @@
+#ifndef TASK_QUEUE_H
+#define TASK_QUEUE_H
+
 #include <pthread.h>
 #include <queue>
 // 定义任务结构体
 using callback = void(*)(void*);
 template<typename T>
-struct Task
-{
-    Task<T>()
-    {
+struct Task{
+    Task<T>(){
         function = nullptr;
         arg = nullptr;
     }
-    Task<T>(callback f, void* arg)
-    {
+    Task<T>(callback f, void* arg){
         function = f;
         this->arg = static_cast<T*>(arg);
     }
@@ -21,8 +21,7 @@ struct Task
 
 // 任务队列
 template<typename T>
-class TaskQueue
-{
+class TaskQueue{
 public:
     TaskQueue();
     ~TaskQueue();
@@ -35,8 +34,7 @@ public:
     Task<T> takeTask();
 
     // 获取当前队列中任务个数
-    inline int taskNumber()
-    {
+    inline int taskNumber(){
         return m_queue.size();
     }
 
@@ -44,3 +42,5 @@ private:
     pthread_mutex_t m_mutex;    // 互斥锁
     std::queue<Task<T>> m_queue;   // 任务队列
 };
+
+#endif

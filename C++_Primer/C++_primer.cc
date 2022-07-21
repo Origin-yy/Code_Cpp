@@ -342,7 +342,7 @@ int main() {
 /*
   #ifndef SALES_DATA_H
   #define SALES_DATA_H
-  不包含using声明
+  建议不包含using声明
   #include <string>
   #include <iostream>
   Sales_data.h：
