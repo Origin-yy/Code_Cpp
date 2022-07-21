@@ -1,3 +1,17 @@
+/*
+ *ThreadPool(int min,int max)  初始化一个线程池实例
+ *addTask(Task (void(function*)(void*)， void*arg) )  添加一个任务进队列  
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+
+ */
+
+
 #include "TaskQueue.cc"
 
 template<typename T>
