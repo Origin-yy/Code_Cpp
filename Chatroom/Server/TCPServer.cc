@@ -1,6 +1,5 @@
 #include "TCPServer.hpp"
 
-
 TcpServer::TcpServer()
 {
     m_fd = socket(AF_INET, SOCK_STREAM, 0);

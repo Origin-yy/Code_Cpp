@@ -17,6 +17,7 @@ public:
     TcpSocket();
     TcpSocket(int socket);
     ~TcpSocket();
+    int getfd() const { return m_fd; }
     int connectToHost(string ip, unsigned short port);
     int sendMsg(string msg);
     string recvMsg();

@@ -35,8 +35,9 @@ public:
     ~TaskQueue();
 
     // 添加任务
-    void addTask(Task<T>& task);
     void addTask(callback func, void* arg);
+    void addTask(Task<T>& task);
+
 
     // 取出一个任务
     Task<T> takeTask();
