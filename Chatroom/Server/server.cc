@@ -19,21 +19,21 @@ int main(){
     temp.data.fd = sfd_class.getfd();
     temp.events = EPOLLIN;
     ret = epoll_ctl(epfd, EPOLL_CTL_ADD, sfd_class.getfd(), &temp);
-    if(ret == -1){
+    if(ret == -1) {
         my_error("epoll_ctl() failed.");
     }
     // 循环监听自己的符看是否有连接请求，监听客户端的符看是否有消息需要处理
-    while(true){
+    while(true) {
         int readyNum = epoll_wait(epfd, ep, 1024, -1);  // 有几个符就绪了
         for (int i = 0; i < readyNum; i++){  // 对于ep中每个就绪的符
              // 如果是服务器的符，说明新客户端连接，接入连接并把客户端的符扔进epoll
-            if(ep[i].data.fd == sfd_class.getfd()){ 
+            if(ep[i].data.fd == sfd_class.getfd()) { 
                 TcpSocket* cfd_class = sfd_class.acceptConn(NULL);
                 temp.data.fd = cfd_class->getfd();
                 temp.events = EPOLLIN;
                 epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class->getfd(),&temp);
             }// 如果是客户端的符，就运行任务函数
-            else{
+            else {
                 Command* command;
                 pool.addTask(Task<Command>(&taskfunc,static_cast<void*>(command)));
             }
@@ -43,7 +43,7 @@ int main(){
     return 0;
 }
 
-void my_error(const char* errorMsg){
+void my_error(const char* errorMsg) {
     cout << errorMsg << endl;
     strerror(errno);
     exit(1);
