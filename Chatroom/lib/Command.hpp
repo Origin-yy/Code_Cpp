@@ -10,8 +10,8 @@ using namespace std;
 
 struct Command{
 public:
-    vector<string> option;  // 命令的操作内容
-    string uid;    // 发送者的uid（没有的话为0）
+    string option;  // 命令的操作内容
+    int uid;    // 发送者的uid（没有的话为0）
     int flag = 0;   // 发送者的操作内容的类别
     int cfd;  // 发送者的fd
     static void From_Json(nlohmann::json& jn, Command& command){

@@ -5,7 +5,7 @@ using json = nlohmann::json;
 
 int main(){
     int ret;  // 检测返回值
-    ThreadPool<Command> pool(2,10);   // 创建一个线程池类
+    ThreadPool<TcpSocket> pool(2,10);   // 创建一个线程池类
     map<int, int> uid_cfd;    // 一个uid对应一个cfd的表
     TcpServer sfd_class;  // 创建服务器的socket
 
@@ -34,8 +34,8 @@ int main(){
                 epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class->getfd(),&temp);
             }// 如果是客户端的符，就运行任务函数
             else {
-                Command* command;
-                pool.addTask(Task<Command>(&taskfunc,static_cast<void*>(command)));
+                TcpSocket *cfd_class = new TcpSocket(ep[i].data.fd);
+                pool.addTask(Task<TcpSocket>(&taskfunc,static_cast<void*>(cfd_class)));
             }
         }
         
@@ -50,5 +50,12 @@ void my_error(const char* errorMsg) {
 }
 //任务函数，获取客户端发来的命令，解析命令进入不同模块，并进行回复
 void taskfunc(void * arg){
-
-}
+    TcpSocket *cfd_class = static_cast<TcpSocket*>(arg);
+    string command_string = cfd_class->recvMsg();
+    //json command_json = command_string;
+    //Command command;
+    //command.From_Json(command_json, command);
+   // cout << command_json << endl;
+    cout << command_string << endl;
+    //cout << command.cfd << endl <<  command.flag << endl << command.option[0] << endl << command.option[1] << endl << command.cfd << endl << command.uid << endl; 
+ }

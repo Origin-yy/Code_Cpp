@@ -1,4 +1,5 @@
 #include "client.hpp"
+
 using json = nlohmann::json;
 
 using namespace std;
@@ -6,7 +7,7 @@ using namespace std;
 int main(){
     int ret;
     signal(SIGTSTP,SIG_IGN);  // 忽略 Ctrl Z
-    signal(SIGINT,SIG_IGN);   // 忽略 Ctrl C
+    //signal(SIGINT,SIG_IGN);   // 忽略 Ctrl C
     string command;  // 每次发送的命令内容
     TcpSocket cfd_class;  // 本客户端的套接字类
     // 连接服务器
@@ -16,7 +17,7 @@ int main(){
     }
     // 选择登录、注册、退出操作,并进入不同的函数
     bool isok = false;
-    while (isok){
+    while (!isok){
         display_login1();
         command = get_input(LOGIN_OPTIONS);
         if(command == "login"){
@@ -67,57 +68,45 @@ string get_input(int flag){
 }
 
 bool login(TcpSocket cfd_class){
-    // 读入输入格式正确的账号
-    string input_uid;
+    // 读入账号
+    int input_uid;
     cout << "账号: ";
     cin >> input_uid;
-    bool isNum = true;
-    for(auto c : input_uid){
-        if(!isdigit(c)){
-            isNum = false;
-        }
-    }
-    while(input_uid.size() != 11 && !isNum) {
-                cout << "请重新输入11位数字." << endl;
-                cin.clear();
-                cin.ignore(102400,'\n');   //或者用cin.sync();
-                cout << "账号: ";
-                cin >> input_uid;
-            }
-    // 读入输入格式正确的密码
+
+    // 读入密码
     string password;
     cout << "密码: ";
     cin >> password;
-    bool isAlnum = true;
-    for(auto c : password){
-        if(!isalnum(c)){
-            isAlnum = false;
-        }
-    }
-    while(password.size() > 16 && !isAlnum) {
-                cout << "请重新输入16位及以下位数的密码." << endl;
-                cin.clear();
-                cin.ignore(102400,'\n');   //或者用cin.sync();
-                cout << "密码: ";
-                cin >> password;
-            }
+
     // 发送账号和密码，接收服务器回信，判断账号密码是否正确
     Command command;
     command.flag = LOGHIN_CHECK;
-    command.uid = 0;
-    command.option.push_back(input_uid);
-    command.option.push_back(password);
-    command.Cfd_class = cfd_class;
+    command.uid = input_uid;
+    command.option = password;
+    command.cfd = cfd_class.getfd();
 
+    json command_json;
+    command.To_Json(command_json, command);
+    //string command_string = command_json.dump();
+
+    cout << command_json << endl;
+    //cout << command_string.c_str() << endl;
+    //cout << json::parse(command_string.c_str()) << endl;
+    cfd_class.sendMsg(command_json);
+    //cfd_class.sendMsg(json::parse(command_string.c_str()));
+
+    cout << "1" << endl;
+
+    string iscorrect = cfd_class.recvMsg();
     if(iscorrect == "incorrect"){
         cout << "用户名或密码错误." << endl;
         return false;
     }else{
-        cout << "登陆成功." << endl;
+        cout << "登录成功." << endl;
         return true;
     }
 }
 
 bool Register(TcpSocket cfd_class){
-
+    return false;
 }

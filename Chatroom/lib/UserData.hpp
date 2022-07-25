@@ -10,10 +10,10 @@ string GetNowTime();
 struct message{  // 消息类，包含发送者uid，发送时间，内容
 public:
     message() = default;
-    message(string senderUid, string time ,string msg): senderUid(senderUid), time(time), msg(msg) {};
+    message(int senderUid, string time ,string msg): senderUid(senderUid), time(time), msg(msg) {};
     ~message();
 private:
-    string senderUid;
+    int senderUid;
     string time = GetNowTime();
     string msg;
 };
@@ -23,7 +23,7 @@ public:
     UserData() = default;
     ~UserData();
 private:
-    string uid;     // 用户输入uid
+    int uid;     // 注册时用户输入uid
     string password = 0; // 密码
     vector<int> list_friend;   // 好友列表
     vector<int> list_group;    // 群聊列表
@@ -36,8 +36,7 @@ public:
     string sex;      // 性别
     string nickname; // 昵称
     string other_information;  // 其他信息
-    string getUid() const { return uid; }
-    void setUid(int newUid) { uid = newUid; }
+    int getUid() const { return uid; }
     void add_message_queue(int& uid);    // 添加一个当前用户与参数所给uid代表的好友/群聊的消息队列进map
     void add_message(int& senderUid, string msg, int uid_queue);  // 发送者的uid，添加一条消息进uid指定的消息队列
 };
