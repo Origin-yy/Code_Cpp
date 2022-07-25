@@ -8,6 +8,7 @@ class TcpServer
 public:
     TcpServer();
     ~TcpServer();
+    int getfd() const {return m_fd;}
     int setListen(unsigned short port);
     TcpSocket* acceptConn(struct sockaddr_in* addr = nullptr);
 

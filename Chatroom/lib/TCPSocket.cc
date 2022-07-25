@@ -24,7 +24,7 @@ int TcpSocket::connectToHost(string ip, unsigned short port)
     struct sockaddr_in saddr;
     saddr.sin_family = AF_INET;
     saddr.sin_port = htons(port);
-    inet_pton(AF_INET, ip.data(), &saddr.sin_addr.s_addr);
+    inet_pton(AF_INET, ip.c_str(), &saddr.sin_addr.s_addr);
     int ret = connect(m_fd, (struct sockaddr*)&saddr, sizeof(saddr));
     if (ret == -1)
     {
