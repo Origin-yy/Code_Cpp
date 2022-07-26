@@ -1,17 +1,7 @@
-/*
- *ThreadPool(int min,int max)  初始化一个线程池实例
- *addTask(Task (void(function*)(void*)， void*arg) )  添加一个任务进队列  
- *
- *
- *
- *
- *
- *
- *
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
 
- */
-
-
+#include "TaskQueue.hpp"
 #include "TaskQueue.cc"
 
 template<typename T>
@@ -48,3 +38,5 @@ private:
     int m_exitNum;
     bool m_shutdown = false;
 };
+
+#endif

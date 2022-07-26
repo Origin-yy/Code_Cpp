@@ -1,14 +1,6 @@
 #ifndef TASK_QUEUE_H
 #define TASK_QUEUE_H
 
-/*
- *Task<T>( void(function*)(void*)， void*arg )   传入一个函数指针和void*参数(实际为T类型）组成一个任务结构体 
- *TaskQueue() 初始化一个任务队列
- *addTask( void(function*)(void*)， void*arg )   添加一个任务进队列  
- *takeTask()   从队列中弹出一个结构体并返回
- *taskNumber()  返回队列中任务数量
- */
-
 #include <pthread.h>
 #include <queue>
 // 定义任务结构体
