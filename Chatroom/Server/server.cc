@@ -2,6 +2,7 @@
 #include "../lib/ThreadPool.hpp"
 #include "../lib/ThreadPool.cc"
 #include "../lib/Command.hpp"
+#include "redis.hpp"
 #include <cerrno>
 #include <cstdio>
 #include <netinet/in.h>
@@ -9,31 +10,28 @@
 #include <map>
 #include <hiredis/hiredis.h> 
 
-#define LOGIN_OPIONS 1
-#define LOGHIN_CHECK 11
+#define LOGIN_OPIONS     1
+#define LOGHIN_CHECK    11
+#define REGISTER_CHECK  12
 
 void my_error(const char* errorMsg);  //错误函数
 void taskfunc(void * arg);            //处理一条命令的任务函数
 
 using namespace std;
-using json = nlohmann::json;
+
+redisContext* redis_s;
 
 int main(){
     // 连接redis服务端
-    const char* RedisIP = "127.0.0.1";     // redisIP地址（环回地址）
-    int RedisPort = 6379;                  // redis默认端口
-    struct timeval timeout = {1, 500000};  // 连接redis的超时时间
-    // redisConnectWithTimeout 超时连接 redis-server，并返回一个句柄
-    redisContext* redis_s = redisConnectWithTimeout(RedisIP, RedisPort, timeout);
-    if(redis_s == nullptr || redis_s->err){
-        cout << "无法连接redis服务端, IP: " << RedisIP << "端口号: " << RedisPort << "." << endl;  
-    }
+    Redis redis;
+    struct timeval timeout = {1, 500000};
+    redis.connect(timeout);    //超时连接
 
     ThreadPool<string> pool(2,10); // 创建一个线程池类
     TcpServer sfd_class;                          // 创建服务器的socket
-    map<int, int> uid_cfd;                        // 一个uid对应一个cfd的表
+    map<string, int> uid_cfd;                     // 一个uid对应一个cfd的表
     int ret;                                      // 检测返回值
-    ret = sfd_class.setListen(6666);        //设置监听返回监听符.内部报错
+    ret = sfd_class.setListen(6666);        // 设置监听返回监听符.内部报错
     if(ret == -1) {exit(1);}
 
     // 创建epoll实例，并把listenfd加进去，监视可读事件
@@ -69,7 +67,7 @@ int main(){
         }
         
     }
-    redisFree(redis_s);
+
     return 0;
 }
 
@@ -80,15 +78,17 @@ void my_error(const char* errorMsg) {
 }
 //任务函数，获取客户端发来的命令，解析命令进入不同模块，并进行回复
 void taskfunc(void *arg){
-
     Command command; // Command类存客户端的命令内容
     string *command_string = static_cast<string*>(arg);
-    json command_json = json::parse(*command_string);   // 将json字符串格式转为json格式
-    command.From_Json(command_json, command);    // 由json字符串格式存到command类里
-    switch (command.flag) {
-    case LOGHIN_CHECK :
-        // 从数据库调取对应数据进行核对，并回复结果
-
+    command.From_Json(*command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
+    switch (command.m_flag) {
+        case LOGHIN_CHECK :{
+            // 从数据库调取对应数据进行核对，并回复结果
+            redisReply* reply = static_cast<redisReply*>(redisCommand(redis_s, " %s","SET"));
+            freeReplyObject(reply);
+            break;
+        }
+    case REGISTER_CHECK :
         break;
     }
  }

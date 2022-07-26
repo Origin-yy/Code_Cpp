@@ -3,30 +3,39 @@
 
 #include "TCPSocket.hpp"
 #include <nlohmann/json.hpp>
-//#include <nlohmann/json_fwd.hpp>
+#include <sstream>
 #include <string>
 #include <vector>
+
 using namespace std;
+using json = nlohmann::json;
 
 struct Command{
 public:
-    vector<string> option;  // 命令的操作内容
-    string uid;    // 发送者的uid（没有的话为0）
-    int flag = 0;   // 发送者的操作内容的类别
-    int cfd;  // 发送者的fd
-    static void From_Json(nlohmann::json& jn, Command& command){
-        jn.at("option").get_to(command.option);
-        jn.at("uid").get_to(command.uid);
-        jn.at("flag").get_to(command.flag);
-        jn.at("cfd").get_to(command.cfd);
+    Command() = default;
+    Command(string uid, int cfd, int flag, string option)
+            : m_uid(uid), m_cfd(cfd), m_flag(flag), m_option(option) {}
+    string m_uid;       // 发送者的uid（没有的话为0）
+    int m_cfd;          // 发送者的fd
+    int m_flag = 0;     // 发送者的操作内容的类别
+    string m_option;    // 命令的操作内容
+    void From_Json(string command_string){
+        json command_json = json::parse(command_string);
+        command_json.at("uid").get_to(m_uid);
+        command_json.at("cfd").get_to(m_cfd);
+        command_json.at("flag").get_to(m_flag);
+        command_json.at("option").get_to(m_option);
     }
-    static void To_Json(nlohmann::json& jn, Command& command){
-        jn = nlohmann::json{
-            {"option",command.option},
-            {"uid",command.uid},
-            {"flag",command.flag},
-            {"cfd",command.cfd},
+    string To_Json(){
+        json command_json;
+        command_json = json{
+            {"uid",m_uid},
+            {"cfd",m_cfd},
+            {"flag",m_flag},
+            {"option",m_option},
         };
+        string command_string = command_json.dump(); // json格式转为json字符串格式
+        return command_string;
     }
 };
 
