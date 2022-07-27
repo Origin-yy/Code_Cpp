@@ -1,6 +1,6 @@
 #include "TCPServer.hpp"
-#include "../lib/ThreadPool.hpp"
-#include "../lib/ThreadPool.cc"
+#include "ThreadPool.hpp"
+#include "ThreadPool.cc"
 #include "../lib/Command.hpp"
 #include "redis.hpp"
 #include <cerrno>
@@ -19,7 +19,7 @@ void taskfunc(void * arg);            //处理一条命令的任务函数
 
 using namespace std;
 
-redisContext* redis_s;
+redisContext* redis_s = nullptr;
 
 int main(){
     // 连接redis服务端
@@ -70,25 +70,3 @@ int main(){
 
     return 0;
 }
-
-void my_error(const char* errorMsg) {
-    cout << errorMsg << endl;
-    strerror(errno);
-    exit(1);
-}
-//任务函数，获取客户端发来的命令，解析命令进入不同模块，并进行回复
-void taskfunc(void *arg){
-    Command command; // Command类存客户端的命令内容
-    string *command_string = static_cast<string*>(arg);
-    command.From_Json(*command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
-    switch (command.m_flag) {
-        case LOGHIN_CHECK :{
-            // 从数据库调取对应数据进行核对，并回复结果
-            redisReply* reply = static_cast<redisReply*>(redisCommand(redis_s, " %s","SET"));
-            freeReplyObject(reply);
-            break;
-        }
-    case REGISTER_CHECK :
-        break;
-    }
- }

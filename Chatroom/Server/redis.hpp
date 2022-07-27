@@ -26,8 +26,6 @@ public:
     string gethash(const string &key, const string &field);                      // 获取对应的hash_value
     bool delhash(const string &key, const string &field);                        // 从哈希表删除指定的元素
 
-
-    
 private:
     string redis_addr = "127.0.0.1";   // redis IP地址，默认环回地址
     int redis_port = 6379;             // redis端口号，默认6379

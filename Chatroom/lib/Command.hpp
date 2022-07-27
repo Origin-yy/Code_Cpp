@@ -27,15 +27,13 @@ public:
         command_json.at("option").get_to(m_option);
     }
     string To_Json(){
-        json command_json;
-        command_json = json{
+        json command_json = json{
             {"uid",m_uid},
             {"cfd",m_cfd},
             {"flag",m_flag},
             {"option",m_option},
         };
-        string command_string = command_json.dump(); // json格式转为json字符串格式
-        return command_string;
+        return command_json.dump(); // json格式转为json字符串格式
     }
 };
 
