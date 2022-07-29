@@ -1,4 +1,6 @@
 #include "client.hpp"
+#include <cstddef>
+#include <pthread.h>
 
 using json = nlohmann::json;
 
@@ -7,15 +9,19 @@ int main(){
     string my_uid;
     signal(SIGTSTP,SIG_IGN);  // 忽略 Ctrl Z
     //signal(SIGINT,SIG_IGN);             // 忽略 Ctrl C
-    string begin;         // 登录或者注册
-    TcpSocket cfd_class;  // 本客户端的套接字类
-    Command command;      // 要发送的命令类
+    string begin;          // 登录或者注册
+    TcpSocket cfd_class("recv");   // 本客户端的套接字类
+    Command command;       // 要发送的命令类
     // 连接服务器
     ret = cfd_class.connectToHost("127.0.0.1", 6666);
     if(ret == -1){
         my_error("connect()");
     }
-    // 选择登录、注册、退出操作,并进入不同的函数
+    //选择登录、注册、退出操作,并进入不同的函数
+    pthread_t tid;
+    int recv_fd = (cfd_class.getrecvfd());
+    pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_fd));
+
     bool isok = false;
     while (!isok){
         display_login1();
@@ -37,7 +43,7 @@ int main(){
     }
     while(true){
         command = get_command(my_uid);
-        
+
         if(command.m_flag == ADDFRIEND){
             AddFriend(cfd_class, command);
         }else if(command.m_flag == ADDGROUP){

@@ -1,6 +1,7 @@
 #include "TCPSocket.hpp"
 #include <asm-generic/errno-base.h>
 #include <cstdio>
+#include <sys/socket.h>
 #include <unistd.h>
 
 TcpSocket::TcpSocket(){
@@ -9,6 +10,13 @@ TcpSocket::TcpSocket(){
 
 TcpSocket::TcpSocket(int socket){
     m_fd = socket;
+}
+
+TcpSocket::TcpSocket(string recv){
+    if(recv == "recv"){
+        m_fd = socket(AF_INET, SOCK_STREAM, 0);
+        recv_fd = socket(AF_INET, SOCK_STREAM, 0);
+    }
 }
 
 TcpSocket::~TcpSocket() {}
@@ -23,7 +31,13 @@ int TcpSocket::connectToHost(string ip, unsigned short port){
         perror("connect");
         return -1;
     }
-    cout << "成功和服务器建立连接..." << endl;
+    ret = connect(recv_fd, (struct sockaddr*)&saddr, sizeof(saddr));
+    if (ret == -1){
+        perror("connect");
+        return -1;
+    }
+    
+    // cout << "交互套接字和通知套接字成功和服务器建立连接..." << endl;
     return ret;
 }
 
@@ -52,7 +66,6 @@ string TcpSocket::recvMsg(){
     }
     len = ntohl(len);
     cout << "数据块大小: " << len << endl;
-
     // 根据读出的长度分配内存
     char* buf = new char[len + 1];
     ret = readn(buf, len);

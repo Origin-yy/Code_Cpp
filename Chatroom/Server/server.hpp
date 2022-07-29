@@ -43,7 +43,7 @@ void taskfunc(void *arg){
     Command command;                               // Command类存客户端的命令内容
     TcpSocket cfd_class = argc_func->cfd_class;    // TcpSocket类用于通信
     command.From_Json(argc_func->command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
-    cout << command.m_uid << endl << command.m_flag << endl << command.m_option[0] << endl;
+     cout << command.m_uid << endl << command.m_flag << endl << command.m_option[0] << endl;
     switch (command.m_flag) {
         case LOGHIN_CHECK :{
             // 从数据库调取对应数据进行核对，并回复结果
@@ -51,15 +51,16 @@ void taskfunc(void *arg){
                 cfd_class.sendMsg("incorrect");
             }else{         // 否则账号存在，通过uid找到这个用户的哈希表，进行密码匹配和登录工作
                 string pwd = redis.gethash(command.m_uid, "密码");
-                cout << pwd << endl;
                 if(pwd != command.m_option[0]){   // 密码错误
                     cfd_class.sendMsg("incorrect");
                 }else if(redis.gethash(command.m_uid, "在线状态") != "-1"){  // 用户在登录
                     cfd_class.sendMsg("online");
                 }
                 else{            // 可以登录，并改变登录状态
-                    cfd_class.sendMsg("ok");   
+                    cfd_class.sendMsg("ok");
+                    cout << "已发送ok" << endl;  
                     redis.hsetValue(command.m_uid, "在线状态", to_string(cfd_class.getfd()));
+                    redis.hsetValue(command.m_uid, "通知套接字", to_string(cfd_class.getrecvfd()));
                 }
             }
             break;
@@ -77,6 +78,7 @@ void taskfunc(void *arg){
                     redis.hsetValue(new_uid, "在线状态", "-1");
                     redis.hsetValue(new_uid, "性别", "未知");
                     redis.hsetValue(new_uid, "其他信息", "无");
+                    redis.hsetValue(new_uid, "通知套接字", "-1");
                     redis.hsetValue(new_uid, "好友列表有无", "无");
                     redis.hsetValue(new_uid, "群聊列表有无", "无");
                     cfd_class.sendMsg(new_uid);
@@ -87,8 +89,10 @@ void taskfunc(void *arg){
         }
         case ADDFRIEND:{
             if(redis.sismember("accounts", command.m_option[0])){
-                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请" + "验证消息为：" + command.m_option[1]);
-                cfd_class.sendMsg("")
+                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请," + "验证消息为：" + command.m_option[1]);
+                string friend_recvfd = redis.gethash(to_string(cfd_class.getrecvfd()), "通知套接字");
+                TcpSocket friendFd_class(stoi(friend_recvfd));
+                friendFd_class.sendMsg("您收到一条好友申请.");
             }
         }
     }

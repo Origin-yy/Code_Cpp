@@ -12,6 +12,20 @@ void my_error(const char* errorMsg){
     exit(1);
 }
 
+void *recvfunc(void* arg){
+    int *recv_fd = static_cast<int*>(arg);
+    TcpSocket recv_class(*recv_fd);
+    while(true){
+        string message = recv_class.recvMsg();
+        if(message == "close" || message == "-1"){
+            cout << "通知套接字已关闭" << endl;
+            break;
+        }
+        cout << message << endl;
+    }
+    return nullptr;
+}
+
 // 信息交互函数（发送命令并收到回复）
 // 登录函数
 string Login(TcpSocket cfd_class){
@@ -29,7 +43,10 @@ string Login(TcpSocket cfd_class){
         exit(0);
     }
     // 收到操作结果
+    cout << "准备收到" << endl;
     string check = cfd_class.recvMsg();
+    cout << "收到" << endl;
+    cout << check << endl;
     if (check == "close" || check == "-1"){
         return "close";
         exit(0);

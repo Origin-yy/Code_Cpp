@@ -16,11 +16,10 @@ int main(){
     struct timeval timeout = {1, 500000};
     redis.connect(timeout);    //超时连接
     // 将每个账号的在线状态改为-1
-    int num = redis.scard("所有用户账号");
-    redisReply **allAccounts = redis.smembers("所有用户账号");
+    int num = redis.scard("accounts");
+    redisReply **allAccounts = redis.smembers("accounts");
     for(int i = 0; i < num; i++){
-        string end("的信息");
-        redis.hsetValue(allAccounts[i]->str + end, "在线状态", "-1");
+        redis.hsetValue(allAccounts[i]->str, "在线状态", "-1");
     }
 
     ThreadPool<Argc_func> pool(2,10); // 创建一个线程池类
