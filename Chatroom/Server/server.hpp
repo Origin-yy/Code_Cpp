@@ -14,6 +14,9 @@
 
 #define LOGHIN_CHECK    1
 #define REGISTER_CHECK  2
+#define ADDFRIEND       3
+#define ADDGROUP        4
+#define AGREEADD        5
 
 struct Argc_func{
 public:
@@ -64,7 +67,7 @@ void taskfunc(void *arg){
         case REGISTER_CHECK :{
             srand((unsigned)time(NULL));
             while(true){
-                string new_uid = to_string((rand()+1000)%10000);
+                string new_uid = to_string((rand()+9999)%10000);
                 if(redis.sismember("accounts", new_uid)){  // 直到随机一个未注册  uid发过去，并建立账号基本信息
                     continue;
                 }else{
@@ -81,6 +84,12 @@ void taskfunc(void *arg){
                 }
             }
             break;
+        }
+        case ADDFRIEND:{
+            if(redis.sismember("accounts", command.m_option[0])){
+                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请" + "验证消息为：" + command.m_option[1]);
+                cfd_class.sendMsg("")
+            }
         }
     }
     return;

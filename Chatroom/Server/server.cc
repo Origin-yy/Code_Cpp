@@ -1,4 +1,6 @@
 #include "server.hpp"
+#include <hiredis/hiredis.h>
+#include <string>
 #include <sys/epoll.h>
 
 
@@ -13,6 +15,13 @@ int main(){
     // 连接redis服务端
     struct timeval timeout = {1, 500000};
     redis.connect(timeout);    //超时连接
+    // 将每个账号的在线状态改为-1
+    int num = redis.scard("所有用户账号");
+    redisReply **allAccounts = redis.smembers("所有用户账号");
+    for(int i = 0; i < num; i++){
+        string end("的信息");
+        redis.hsetValue(allAccounts[i]->str + end, "在线状态", "-1");
+    }
 
     ThreadPool<Argc_func> pool(2,10); // 创建一个线程池类
     TcpServer sfd_class;                             // 创建服务器的socket
@@ -47,14 +56,16 @@ int main(){
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来传字符串
                 // new一个字符串，接收发过来的json字符串格式，作为任务函数参数
                 string command_string = cfd_class.recvMsg();
+                Command command;
+                command.From_Json(command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
                 if(command_string == "close"){
+                    redis.hsetValue(command.m_uid, "在线状态", "-1");
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
                     continue;
                 }
                 Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
                 // 调用任务函数，传发过来的json字符串格式过去
                 pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
-                cout << "addtask ok " << endl;
             }
         }
     }

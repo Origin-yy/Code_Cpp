@@ -108,3 +108,22 @@ bool AddGroup(TcpSocket cfd_class, Command command){
         return false;
     }
 }
+
+bool AgreeAdd(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << "好友申请已通过" << endl;
+        return true;
+    }else{
+        cout << "未找到该用户的好友申请." << endl;
+        return false;
+    }
+}

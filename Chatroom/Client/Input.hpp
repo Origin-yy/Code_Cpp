@@ -8,6 +8,7 @@ using namespace std;
 #define REGISTER_CHECK  2
 #define ADDFRIEND       3
 #define ADDGROUP        4
+#define AGREEADD        5
 
 // 获取正确输入的函数
 // 获得登录选项
@@ -86,19 +87,34 @@ Command get_command(string my_uid){
     cin.sync();
     getline(cin, input);
     while(true){
-        if(input.find("add-friend-") == 0){
-            string option(input.begin()+11, input.end());
-            if(option == my_uid){
+        if(input.find("add-friend-") == 0 && input.size() >= 15){
+            string option1(input.begin()+11, input.begin()+15);
+            if(option1 == my_uid){
                 cout << "不允许添加自己" << endl;
                 cout << "请输入您想进行的操作:" << endl;
                 cin.sync();
                 getline(cin, input);
                 continue;
+            }else if(input.size() > 16 && input[15] == '-'){
+                string option2(input.begin()+16, input.end()); 
+                Command command(my_uid, ADDFRIEND, {option1, option2});
+                return command;
             }else{
-                Command command(my_uid, ADDFRIEND, {option});
+                Command command(my_uid, ADDFRIEND, {option1, "无"});
                 return command;
             }
-        }else{
+        }else if(input.find("agree-") == 0){
+            string option1(input.begin()+6,input.end());
+            Command command(my_uid, AGREEADD, {option1});
+            return command;
+        }
+        
+        
+        
+        
+        
+        
+        else{
             cout << "无效的操作，请重新输入." << endl;
             cout << "请输入您想进行的操作:" << endl;
             cin.sync();
