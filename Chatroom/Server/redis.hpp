@@ -7,8 +7,6 @@
 #include <iostream>
 using namespace std;
 
-
-
 class Redis{
 public:
     Redis() = default;
@@ -20,11 +18,24 @@ public:
     bool setValue(const string &key, const string &value);              // 添加或修改键值对
     string getValue(const string &key);                                 // 获取键对应的值
     bool delKey(const string &key);                                     // 删除键
-
-    bool hsetValue(const string &key, const string &field, const string &value); // 插入哈希表
-    bool hashexists(const string &key, const string &field);                     // 查看是否存在哈希表
-    string gethash(const string &key, const string &field);                      // 获取对应的hash_value
+    // 哈希表相关操作
+    bool hsetValue(const string &key, const string &field, const string &value); // 指定key哈希表field字段的值
+    bool hashexists(const string &key, const string &field);                     // 查看key的哈希表中是否存在field字段
+    string gethash(const string &key, const string &field);                      // 获取key哈希表中field对应的值
     bool delhash(const string &key, const string &field);                        // 从哈希表删除指定的元素
+    int hlen(const string &key);                                                 // 返回哈希表中的元素个数
+     // set相关操作
+    int scard(const string &key);                                                // 返回set集合里的元素个数
+    int saddvalue(const string &key, const string &value);                       // 插入到集合
+    int sismember(const string &key, const string &value);                       // 查看数据是否存在
+    int sremvalue(const string &key, const string &value);                       // 将数据从set中移出
+    redisReply **smembers(const string &key);                                    // 返回set中所有成员
+    // list相关操作
+    int lpush(const string &key, const string &value);          // 插入一条消息
+    int llen(const string &key);                                // 获取列表长度
+    redisReply **lrange(const string &key);                     // 返回列表所有元素
+    redisReply **lrange(const string &key, string a, string b); // 返回列表中指定的元素
+    int ltrim(const string &key);                               // 删除列表中的所有元素
 
 private:
     string redis_addr = "127.0.0.1";   // redis IP地址，默认环回地址
@@ -128,6 +139,77 @@ bool Redis::delhash(const string &key, const string &field){
     }else{
         return true;
     };
+}
+
+int Redis::hlen(const string &key) // 返回哈希表中的元素个数
+{
+    string cmd = "hlen  " + key;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->integer;
+}
+int Redis::scard(const string &key) // 返回set集合里的元素个数
+{
+    string cmd = "scard  " + key;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->integer;
+}
+int Redis::saddvalue(const string &key, const string &value) // 插入到集合
+{
+    string cmd = "sadd  " + key + "  " + value;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->type;
+}
+int Redis::sismember(const string &key, const string &value) //查看数据是否存在
+{
+    string cmd = "sismember  " + key + "  " + value;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->integer;
+}
+int Redis::sremvalue(const string &key, const string &value) //将数据从set中移出
+{
+    string cmd = "srem  " + key + "  " + value;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->type;
+}
+redisReply **Redis::smembers(const string &key)
+{
+    string cmd = "smembers  " + key;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->element;
+}
+
+int Redis::lpush(const string &key, const string &value)
+{
+    string cmd = "lpush  " + key + " " + value;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->type;
+}
+int Redis::llen(const string &key)
+{
+    string cmd = "llen  " + key;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->integer;
+}
+
+redisReply **Redis::lrange(const string &key) //返回所有消息
+{
+    string cmd = "lrange  " + key + "  0" + "  -1";
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->element;
+}
+
+redisReply **Redis::lrange(const string &key, string a, string b) //返回指定的消息记录
+{
+    string cmd = "lrange  " + key + "  " + a + "  " + b;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->element;
+}
+
+int  Redis::ltrim(const string &key) //删除链表中的所有元素
+{
+    string cmd = "ltrim  " + key + " 1 " + " 0 ";
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->type;
 }
 
 #endif

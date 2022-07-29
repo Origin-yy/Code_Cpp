@@ -1,14 +1,15 @@
 #include "client.hpp"
 
-using namespace std;
 using json = nlohmann::json;
 
 int main(){
     int ret;
+    string my_uid;
     signal(SIGTSTP,SIG_IGN);  // 忽略 Ctrl Z
-    //signal(SIGINT,SIG_IGN);   // 忽略 Ctrl C
-    string command;  // 每次发送的命令内容
+    //signal(SIGINT,SIG_IGN);             // 忽略 Ctrl C
+    string begin;         // 登录或者注册
     TcpSocket cfd_class;  // 本客户端的套接字类
+    Command command;      // 要发送的命令类
     // 连接服务器
     ret = cfd_class.connectToHost("127.0.0.1", 6666);
     if(ret == -1){
@@ -18,14 +19,29 @@ int main(){
     bool isok = false;
     while (!isok){
         display_login1();
-        command = get_login();
-        if(command == "login"){
-            isok = Login(cfd_class,LOGHIN_CHECK);
-        } else if(command == "register"){
-            isok = Login(cfd_class,REGISTER_CHECK);
+        begin = get_login();
+        if(begin == "login"){
+            my_uid = Login(cfd_class);
+            if(my_uid == "close"){
+                exit(0);
+            }else if(my_uid != "false"){
+                isok = true;
+            }
+        } else if(begin == "register"){
+            Register(cfd_class);
+            continue;
         } else {
             cout << "感谢您的使用,再见." << endl;
             return 0;
+        }
+    }
+    while(true){
+        command = get_command(my_uid);
+        
+        if(command.m_flag == ADDFRIEND){
+            AddFriend(cfd_class, command);
+        }else if(command.m_flag == ADDGROUP){
+            AddGroup(cfd_class, command);
         }
     }
 }
