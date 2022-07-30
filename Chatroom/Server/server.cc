@@ -50,18 +50,33 @@ int main(){
                 temp.data.fd = cfd_class->getfd();
                 temp.events = EPOLLIN;
                 epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class->getfd(),&temp);
-            }// 如果是客户端的符，就运行任务函数
+            }// 如果是客户端的符，就接收消息，并处理
             else {
-                TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来传字符串
-                // new一个字符串，接收发过来的json字符串格式，作为任务函数参数
-                string command_string = cfd_class.recvMsg();
-                Command command;
-                command.From_Json(command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
-                if(command_string == "close"){
-                    redis.hsetValue(command.m_uid, "在线状态", "-1");
+                TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
+                string command_string = cfd_class.recvMsg(); // 接收命令json字符串
+                // 判断是不是通知套接字，是就加到对应的用户信息里，后边不执行
+                int isRecvFd = 0;
+                if(command_string.size() == 4){
+                    for(auto c :command_string){
+                        if(isdigit(c)){
+                            isRecvFd++;
+                        }
+                    }
+                    if(isRecvFd == 4){
+                        redis.hsetValue(command_string, "通知套接字", to_string(ep[i].data.fd));
+                        continue;
+                    }
+                }     // 如果不是通知套接字,那就是客户端，如过客户端挂了，socket类里关fd,并修改用户信息，后面不执行
+                else if(command_string == "close" || command_string == "-1"){      // 如果客户端挂了，socket类里关fd,并修改用户信息
+                    cout << "客户端断开连接" << endl;
+                    string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
+                    redis.hsetValue(cuid, "在线状态", "-1");
+                    redis.hsetValue(cuid, "通知套接字", "-1");
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
                     continue;
                 }
+                Command command;
+                command.From_Json(command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
                 Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
                 // 调用任务函数，传发过来的json字符串格式过去
                 pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));

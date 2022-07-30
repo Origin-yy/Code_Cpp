@@ -61,13 +61,14 @@ void taskfunc(void *arg){
                     cout << "已发送ok" << endl;  
                     redis.hsetValue(command.m_uid, "在线状态", to_string(cfd_class.getfd()));
                     redis.hsetValue(command.m_uid, "通知套接字", to_string(cfd_class.getrecvfd()));
+                    redis.hsetValue("fd-uid对应表", to_string(cfd_class.getfd()), command.m_uid);
                 }
             }
             break;
         }
         case REGISTER_CHECK :{
             srand((unsigned)time(NULL));
-            while(true){
+            while(true){                                                   
                 string new_uid = to_string((rand()+9999)%10000);
                 if(redis.sismember("accounts", new_uid)){  // 直到随机一个未注册  uid发过去，并建立账号基本信息
                     continue;
@@ -89,8 +90,8 @@ void taskfunc(void *arg){
         }
         case ADDFRIEND:{
             if(redis.sismember("accounts", command.m_option[0])){
-                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请," + "验证消息为：" + command.m_option[1]);
-                string friend_recvfd = redis.gethash(to_string(cfd_class.getrecvfd()), "通知套接字");
+                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请," + "验证消息：" + command.m_option[1]);
+                string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
                 TcpSocket friendFd_class(stoi(friend_recvfd));
                 friendFd_class.sendMsg("您收到一条好友申请.");
             }

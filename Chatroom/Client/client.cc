@@ -18,9 +18,6 @@ int main(){
         my_error("connect()");
     }
     //选择登录、注册、退出操作,并进入不同的函数
-    pthread_t tid;
-    int recv_fd = (cfd_class.getrecvfd());
-    pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_fd));
 
     bool isok = false;
     while (!isok){
@@ -43,7 +40,7 @@ int main(){
     }
     while(true){
         command = get_command(my_uid);
-
+        
         if(command.m_flag == ADDFRIEND){
             AddFriend(cfd_class, command);
         }else if(command.m_flag == ADDGROUP){

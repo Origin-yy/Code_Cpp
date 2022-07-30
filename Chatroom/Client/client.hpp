@@ -1,10 +1,16 @@
 #include "../lib/TCPSocket.hpp"
 #include "Display.hpp"
 #include "Input.hpp"
+#include <pthread.h>
 #include <sys/types.h>
 #include <string>
 #include <signal.h>
 
+struct RecvArg{
+    string myuid;
+    int recv_fd = -1;
+    RecvArg(string Myuid, int Recv_uid) : myuid(Myuid),recv_fd(Recv_uid) {} 
+};
 
 void my_error(const char* errorMsg){
     cout << errorMsg << endl;
@@ -13,8 +19,9 @@ void my_error(const char* errorMsg){
 }
 
 void *recvfunc(void* arg){
-    int *recv_fd = static_cast<int*>(arg);
-    TcpSocket recv_class(*recv_fd);
+    RecvArg *recv_arg = static_cast<RecvArg*>(arg);
+    TcpSocket recv_class(recv_arg->recv_fd);
+    recv_class.sendMsg(recv_arg->myuid);
     while(true){
         string message = recv_class.recvMsg();
         if(message == "close" || message == "-1"){
@@ -57,6 +64,13 @@ string Login(TcpSocket cfd_class){
         cout << "该账号正在登录中" << endl;
         return "false";
     }else if(check == "ok"){
+        pthread_t tid;
+        RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
+        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
+        ret = pthread_detach(tid);
+        if(ret != 0){
+            my_error("pthread_detach()");
+        }
         cout << "登录成功" << endl;
         return input_uid;
     }else

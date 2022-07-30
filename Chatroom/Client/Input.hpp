@@ -15,8 +15,7 @@ using namespace std;
 string get_login(){
     string command;
     getline(cin,command);
-    if(cin.eof())
-    {
+    if(cin.eof()){
         cout << "读到EOF" << endl;
         return "EOF";
     }
