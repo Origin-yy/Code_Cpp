@@ -4,11 +4,14 @@
 
 using namespace std;
 
+#define QUIT            0
 #define LOGHIN_CHECK    1
 #define REGISTER_CHECK  2
 #define ADDFRIEND       3
 #define ADDGROUP        4
 #define AGREEADD        5
+#define LISTFRIEND      6
+#define LISTGROUP       7
 
 // 获取正确输入的函数
 // 获得登录选项
@@ -107,13 +110,25 @@ Command get_command(string my_uid){
             Command command(my_uid, AGREEADD, {option1});
             return command;
         }
+        else if(input == "list-friend"){
+            string option1 = "list-friend";
+            Command command(my_uid, LISTFRIEND, {option1});
+            return command;
+        }else if(input == "list-group"){
+            string option1 = "list-group";
+            Command command(my_uid, LISTGROUP, {option1});
+            return command;
+        }
         
         
         
         
         
         
-        else{
+        else if(input == "quit"){
+            Command command(my_uid, QUIT, {"无"});
+                return command;
+        }else{
             cout << "无效的操作，请重新输入." << endl;
             cout << "请输入您想进行的操作:" << endl;
             cin.sync();

@@ -64,6 +64,7 @@ string Login(TcpSocket cfd_class){
         cout << "该账号正在登录中" << endl;
         return "false";
     }else if(check == "ok"){
+        // 登录成功就新建一个线程等回信
         pthread_t tid;
         RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
         pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
@@ -93,7 +94,7 @@ bool Register(TcpSocket cfd_class){
     }
     Command command("NULL", REGISTER_CHECK,{pwd});
     int ret = cfd_class.sendMsg(command.To_Json());  // 命令类将类转josn格式，再转json字符串格式，套接字类发送json字符串格式
-    if(ret == 0){
+    if(ret == 0 || ret == -1){
         cout << "服务器已关闭" << endl;
         exit(0);
     }

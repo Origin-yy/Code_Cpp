@@ -54,6 +54,7 @@ int main(){
             else {
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
+
                 // 判断是不是通知套接字，是就加到对应的用户信息里，后边不执行
                 int isRecvFd = 0;
                 if(command_string.size() == 4){
@@ -66,8 +67,9 @@ int main(){
                         redis.hsetValue(command_string, "通知套接字", to_string(ep[i].data.fd));
                         continue;
                     }
-                }     // 如果不是通知套接字,那就是客户端，如过客户端挂了，socket类里关fd,并修改用户信息，后面不执行
-                else if(command_string == "close" || command_string == "-1"){      // 如果客户端挂了，socket类里关fd,并修改用户信息
+                }
+                // 如果不是通知套接字,那就是客户端，如过客户端挂了，socket类里关fd,并修改用户信息，后面不执行
+                else if(command_string == "close" || command_string == "-1"){      // 如果客户异常端挂了，socket类里关fd,并修改用户信息
                     cout << "客户端断开连接" << endl;
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
                     redis.hsetValue(cuid, "在线状态", "-1");
@@ -75,8 +77,9 @@ int main(){
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
                     continue;
                 }
+                // 命令类将sring格式的字符串转为josn格式的字符串，再存到command类里,最后和通信套接字组成参数传进任务函数
                 Command command;
-                command.From_Json(command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
+                command.From_Json(command_string);    
                 Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
                 // 调用任务函数，传发过来的json字符串格式过去
                 pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));

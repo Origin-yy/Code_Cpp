@@ -3,6 +3,7 @@
 #include "ThreadPool.cc"
 #include "../lib/Command.hpp"
 #include "redis.hpp"
+#include <bits/types/time_t.h>
 #include <cerrno>
 #include <cstdio>
 #include <netinet/in.h>
@@ -12,6 +13,7 @@
 #include <hiredis/hiredis.h> 
 #include <ctime>
 
+#define QUIT            0
 #define LOGHIN_CHECK    1
 #define REGISTER_CHECK  2
 #define ADDFRIEND       3
@@ -25,8 +27,9 @@ public:
     string command_string;
 };
 
-void my_error(const char* errorMsg);  //错误函数
-void taskfunc(void * arg);            //处理一条命令的任务函数
+void my_error(const char* errorMsg);  // 错误函数
+string GetNowTime();                  // h获得当前时间
+void taskfunc(void * arg);            // 处理一条命令的任务函数
 
 using namespace std;
 
@@ -37,6 +40,17 @@ void my_error(const char* errorMsg) {
     strerror(errno);
     exit(1);
 }
+
+string GetNowTime(){
+    time_t nowtime;
+    struct tm*p;
+    time(&nowtime);
+    p = localtime(&nowtime);
+    string now_time = "  ——" + to_string(p->tm_hour) + ":" + to_string(p->tm_min) + "——" +
+                        to_string(p->tm_mon+1) + "." + to_string(p->tm_mday);
+    return now_time;
+}
+
 // 任务函数，获取客户端发来的命令，解析命令进入不同模块，并进行回复
 void taskfunc(void *arg){
     Argc_func *argc_func = static_cast<Argc_func*>(arg);
@@ -45,6 +59,9 @@ void taskfunc(void *arg){
     command.From_Json(argc_func->command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
      cout << command.m_uid << endl << command.m_flag << endl << command.m_option[0] << endl;
     switch (command.m_flag) {
+        case QUIT : {
+        break;
+        }
         case LOGHIN_CHECK :{
             // 从数据库调取对应数据进行核对，并回复结果
             if(!redis.sismember("accounts", command.m_uid)){  // 如果没有账号，返回错误
@@ -90,12 +107,21 @@ void taskfunc(void *arg){
         }
         case ADDFRIEND:{
             if(redis.sismember("accounts", command.m_option[0])){
-                redis.lpush(command.m_option[0] + "的系统消息", "来自用户" + command.m_uid + "的好友申请," + "验证消息：" + command.m_option[1]);
+                cfd_class.sendMsg("ok");
+                string msg = "来自用户" + command.m_uid + "的好友申请.\n" + "验证消息：\n" +
+                             command.m_option[1] + "\n" + GetNowTime();
+                json jn = msg;
+                string msg_json = jn.dump();
+                cout << "msg: " << msg << endl;
+                redis.lpush(command.m_option[0] + "的系统消息", msg_json);
                 string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
                 TcpSocket friendFd_class(stoi(friend_recvfd));
-                friendFd_class.sendMsg("您收到一条好友申请.");
+                friendFd_class.sendMsg("您收到一条好友申请." + GetNowTime());
+            }else{
+                cfd_class.sendMsg("nofind");
             }
         }
+
     }
     return;
 }

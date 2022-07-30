@@ -40,11 +40,15 @@ int main(){
     }
     while(true){
         command = get_command(my_uid);
-        
-        if(command.m_flag == ADDFRIEND){
+        switch (command.m_flag) {
+        case ADDFRIEND :
             AddFriend(cfd_class, command);
-        }else if(command.m_flag == ADDGROUP){
+            break;
+        case ADDGROUP :
             AddGroup(cfd_class, command);
+            break;
+        case QUIT :
+            return 0;
         }
     }
 }

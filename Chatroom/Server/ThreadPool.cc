@@ -1,4 +1,5 @@
 #include "ThreadPool.hpp"
+#include <pthread.h>
 #include <string.h>
 #include <iostream>
 #include <unistd.h>
@@ -34,10 +35,12 @@ ThreadPool<T>::ThreadPool(int minNum, int maxNum){
         // 根据最小线程个数, 创建线程
         for (int i = 0; i < minNum; ++i){
             pthread_create(&m_threadIDs[i], NULL, worker, this);
+            pthread_detach(m_threadIDs[i]);
             cout << "创建子线程, ID: " << to_string(m_threadIDs[i]) << endl;
         }
         // 创建管理者线程, 1个
         pthread_create(&m_managerID, NULL, manager, this);
+        pthread_detach(m_managerID);
     } while (0);
 }
 
@@ -167,6 +170,7 @@ void* ThreadPool<T>::manager(void* arg){
                 && pool->m_aliveNum < pool->m_maxNum; ++i){
                 if (pool->m_threadIDs[i] == 0){
                     pthread_create(&pool->m_threadIDs[i], NULL, worker, pool);
+                    pthread_detach(pool->m_threadIDs[i]);
                     num++;
                     pool->m_aliveNum++;
                 }
