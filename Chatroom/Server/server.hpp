@@ -18,7 +18,9 @@
 #define REGISTER_CHECK  2
 #define ADDFRIEND       3
 #define ADDGROUP        4
-#define AGREEADD        5
+#define AGREEADDFRIEND  6
+#define LISTFRIEND      7
+#define LISTGROUP       8
 
 struct Argc_func{
 public:
@@ -46,7 +48,7 @@ string GetNowTime(){
     struct tm*p;
     time(&nowtime);
     p = localtime(&nowtime);
-    string now_time = "  ——" + to_string(p->tm_hour) + ":" + to_string(p->tm_min) + "——" +
+    string now_time = "——" + to_string(p->tm_hour) + ":" + to_string(p->tm_min) + "——" +
                         to_string(p->tm_mon+1) + "." + to_string(p->tm_mday);
     return now_time;
 }
@@ -59,9 +61,6 @@ void taskfunc(void *arg){
     command.From_Json(argc_func->command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
      cout << command.m_uid << endl << command.m_flag << endl << command.m_option[0] << endl;
     switch (command.m_flag) {
-        case QUIT : {
-        break;
-        }
         case LOGHIN_CHECK :{
             // 从数据库调取对应数据进行核对，并回复结果
             if(!redis.sismember("accounts", command.m_uid)){  // 如果没有账号，返回错误
@@ -77,7 +76,6 @@ void taskfunc(void *arg){
                     cfd_class.sendMsg("ok");
                     cout << "已发送ok" << endl;  
                     redis.hsetValue(command.m_uid, "在线状态", to_string(cfd_class.getfd()));
-                    redis.hsetValue(command.m_uid, "通知套接字", to_string(cfd_class.getrecvfd()));
                     redis.hsetValue("fd-uid对应表", to_string(cfd_class.getfd()), command.m_uid);
                 }
             }
@@ -93,12 +91,15 @@ void taskfunc(void *arg){
                     redis.saddvalue("accounts", new_uid);
                     redis.hsetValue(new_uid, "账号", new_uid);
                     redis.hsetValue(new_uid, "密码", command.m_option[0]);
+                    redis.hsetValue(new_uid, "昵称", new_uid);
                     redis.hsetValue(new_uid, "在线状态", "-1");
                     redis.hsetValue(new_uid, "性别", "未知");
                     redis.hsetValue(new_uid, "其他信息", "无");
                     redis.hsetValue(new_uid, "通知套接字", "-1");
-                    redis.hsetValue(new_uid, "好友列表有无", "无");
-                    redis.hsetValue(new_uid, "群聊列表有无", "无");
+                    redis.hsetValue(new_uid, "好友列表", "空");
+                    redis.hsetValue(new_uid, "群聊列表", "空");
+                    redis.hsetValue(new_uid, "群聊列表", "空");
+                    redis.hsetValue(new_uid, "消息列表", "空");
                     cfd_class.sendMsg(new_uid);
                     break;
                 }
@@ -113,13 +114,22 @@ void taskfunc(void *arg){
                 json jn = msg;
                 string msg_json = jn.dump();
                 cout << "msg: " << msg << endl;
-                redis.lpush(command.m_option[0] + "的系统消息", msg_json);
+                redis.lpush(command.m_option[0] + "--系统", msg_json);
                 string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
                 TcpSocket friendFd_class(stoi(friend_recvfd));
-                friendFd_class.sendMsg("您收到一条好友申请." + GetNowTime());
+                friendFd_class.sendMsg("收到一条好友申请." + GetNowTime());
             }else{
                 cfd_class.sendMsg("nofind");
             }
+            break;
+        }
+        case AGREEADDFRIEND:{
+            string friend_mark0  = redis.gethash(command.m_option[0], "昵称");                    // 获得0的昵称作为默认备注
+            redis.hsetValue(command.m_uid + "的好友列表", command.m_option[0], friend_mark0);// 在1好友列表里插入0的uid和默认备注
+            cfd_class.sendMsg("ok");                                                                    // 给1回信
+            string friend_mark1 = redis.gethash(command.m_uid, "昵称");                           // 获得1的昵称
+            redis.hsetValue(command.m_option[0] + "的好友列表", command.m_uid, friend_mark1);// 在0的好友列表里插入1的uid和默认备注
+            redis.lpush(command.m_option[0] + "--系统", command.m_uid + "通过了您的好友申请.");      // 在0的系统消息里写入通过消息
         }
 
     }

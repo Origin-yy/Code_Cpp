@@ -6,18 +6,30 @@
 #include <string>
 #include <signal.h>
 
+void my_error(const char* errorMsg);
+void *recvfunc(void* arg);
+void Quit();
+string Login(TcpSocket cfd_class);
+bool Register(TcpSocket cfd_class);
+void Quit(TcpSocket cfd_class);
+bool AddFriend(TcpSocket cfd_class, Command command);
+bool AddGroup(TcpSocket cfd_class, Command command);
+bool AgreeAddFriend(TcpSocket cfd_class, Command command);
+
 struct RecvArg{
     string myuid;
     int recv_fd = -1;
     RecvArg(string Myuid, int Recv_uid) : myuid(Myuid),recv_fd(Recv_uid) {} 
 };
 
+// 错误函数
 void my_error(const char* errorMsg){
     cout << errorMsg << endl;
     strerror(errno);
     exit(1);
 }
 
+// 接收通知的线程任务函数
 void *recvfunc(void* arg){
     RecvArg *recv_arg = static_cast<RecvArg*>(arg);
     TcpSocket recv_class(recv_arg->recv_fd);
@@ -34,6 +46,11 @@ void *recvfunc(void* arg){
 }
 
 // 信息交互函数（发送命令并收到回复）
+// 登录函数
+void Quit(TcpSocket cfd_class){
+    cfd_class.sendMsg("quit");
+}
+
 // 登录函数
 string Login(TcpSocket cfd_class){
     string input_uid;
@@ -66,8 +83,8 @@ string Login(TcpSocket cfd_class){
     }else if(check == "ok"){
         // 登录成功就新建一个线程等回信
         pthread_t tid;
-        RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
-        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
+        RecvArg *recv_arg = new RecvArg(input_uid,cfd_class.getrecvfd());
+        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(recv_arg));
         ret = pthread_detach(tid);
         if(ret != 0){
             my_error("pthread_detach()");
@@ -122,6 +139,7 @@ bool AddFriend(TcpSocket cfd_class, Command command){
         return false;
     }
 }
+
 bool AddGroup(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -141,7 +159,7 @@ bool AddGroup(TcpSocket cfd_class, Command command){
     }
 }
 
-bool AgreeAdd(TcpSocket cfd_class, Command command){
+bool AgreeAddFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl;
@@ -152,7 +170,7 @@ bool AgreeAdd(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
-        cout << "好友申请已通过" << endl;
+        cout << "已通过" << command.m_option[0] << "的好友申请" << endl;
         return true;
     }else{
         cout << "未找到该用户的好友申请." << endl;

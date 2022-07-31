@@ -44,16 +44,19 @@ int main(){
     while(true) {
         int readyNum = epoll_wait(epfd, ep, 1024, -1);  // 有几个符就绪了
         for (int i = 0; i < readyNum; i++){  // 对于ep中每个就绪的符
-             // 如果是服务器的符，说明新客户端连接，接入连接并把客户端的符扔进epoll
+             // 如果是服务器的符，说明新客户端的交互/通知套接字连接，接入连接并把符扔进epoll,并在fd-uid表里加上该符，对应uid先为-1，在登录时在获得并写入uid
             if (ep[i].data.fd == sfd_class.getfd()) { 
                 TcpSocket* cfd_class = sfd_class.acceptConn(NULL);
                 temp.data.fd = cfd_class->getfd();
                 temp.events = EPOLLIN;
                 epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class->getfd(),&temp);
-            }// 如果是客户端的符，就接收消息，并处理
+                redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), "-1");
+            }
+            // 如果是客户端的符，就接收消息，并处理
             else {
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
+                //cout << "command_string: " << command_string << endl;
 
                 // 判断是不是通知套接字，是就加到对应的用户信息里，后边不执行
                 int isRecvFd = 0;
@@ -63,20 +66,24 @@ int main(){
                             isRecvFd++;
                         }
                     }
-                    if(isRecvFd == 4){
-                        redis.hsetValue(command_string, "通知套接字", to_string(ep[i].data.fd));
-                        continue;
-                    }
                 }
+                if(isRecvFd == 4){
+                    redis.hsetValue(command_string, "通知套接字", to_string(ep[i].data.fd));
+                    redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command_string);
+                    continue;
+                }                
+
                 // 如果不是通知套接字,那就是客户端，如过客户端挂了，socket类里关fd,并修改用户信息，后面不执行
-                else if(command_string == "close" || command_string == "-1"){      // 如果客户异常端挂了，socket类里关fd,并修改用户信息
+                else if(command_string == "close" || command_string == "-1" || command_string == "quit"){      // 如果客户异常端挂了，socket类里关fd,并修改用户信息
                     cout << "客户端断开连接" << endl;
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
+                    cout << "cuid : " << cuid << endl;
                     redis.hsetValue(cuid, "在线状态", "-1");
                     redis.hsetValue(cuid, "通知套接字", "-1");
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
                     continue;
                 }
+                
                 // 命令类将sring格式的字符串转为josn格式的字符串，再存到command类里,最后和通信套接字组成参数传进任务函数
                 Command command;
                 command.From_Json(command_string);    

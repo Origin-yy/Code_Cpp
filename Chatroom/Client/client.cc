@@ -41,14 +41,21 @@ int main(){
     while(true){
         command = get_command(my_uid);
         switch (command.m_flag) {
+        case QUIT :
+            cfd_class.sendMsg("quit");
+            cout << "感谢您的使用，再见" << endl;
+            return 0;
         case ADDFRIEND :
             AddFriend(cfd_class, command);
             break;
         case ADDGROUP :
             AddGroup(cfd_class, command);
             break;
-        case QUIT :
-            return 0;
+        case AGREEADDFRIEND :
+cout << "进了函数" << endl;
+            AgreeAddFriend(cfd_class, command);
+cout << "函数跑了" << endl;
+            break;
         }
     }
 }
