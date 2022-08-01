@@ -108,6 +108,7 @@ void taskfunc(void *arg){
         }
         case ADDFRIEND:{
             // 判断准好友是否已在好友列表里
+            
             if(redis.sismember("accounts", command.m_option[0])){
                 cfd_class.sendMsg("ok");
                 string msg = "来自用户" + command.m_uid + "的好友申请.\n" + "验证消息：\n" +

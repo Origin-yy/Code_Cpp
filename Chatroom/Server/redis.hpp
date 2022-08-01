@@ -89,7 +89,12 @@ bool Redis::setValue(const string &key, const string &value){
 string Redis::getValue(const string &key){ 
     string cmd = "get  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->str;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return "false";
+    }else{
+        return reply->str;
+    };
 }
 // 删除键值
 bool Redis::delKey(const string &key){
@@ -128,7 +133,12 @@ bool Redis::hashexists(const string &key, const string &field){
 string Redis::gethash(const string &key, const string &field){ 
     string cmd = "hget  " + key + "  " + field;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->str;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return "false";
+    }else{
+        return reply->str;
+    };
 }
 // 从哈希表删除指定的元素
 bool Redis::delhash(const string &key, const string &field){    
@@ -145,78 +155,138 @@ bool Redis::delhash(const string &key, const string &field){
 int Redis::hlen(const string &key){ // 返回哈希表中的元素个数
     string cmd = "hlen  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->integer;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->integer;
+    };
 }
 
 redisReply**Redis::hkeys(const string &key){
     string cmd = "hkeys  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->element;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return nullptr;
+    }else{
+        return reply->element;
+    };
 }
 
 int Redis::scard(const string &key) // 返回set集合里的元素个数
 {
     string cmd = "scard  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->integer;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->integer;
+    };
 }
 int Redis::saddvalue(const string &key, const string &value) // 插入到集合
 {
     string cmd = "sadd  " + key + "  " + value;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->type;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->type;
+    };
 }
 int Redis::sismember(const string &key, const string &value) //查看数据是否存在
 {
     string cmd = "sismember  " + key + "  " + value;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->integer;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->integer;
+    };
 }
 int Redis::sremvalue(const string &key, const string &value) //将数据从set中移出
 {
     string cmd = "srem  " + key + "  " + value;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->type;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->integer;
+    };
 }
 redisReply **Redis::smembers(const string &key)
 {
     string cmd = "smembers  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->element;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return nullptr;
+    }else{
+        return reply->element;
+    };
 }
 
 int Redis::lpush(const string &key, const string &value)
 {
     string cmd = "lpush  " + key + " " + value;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->type;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->type;
+    };
 }
 int Redis::llen(const string &key)
 {
     string cmd = "llen  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->integer;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->integer;
+    };
 }
 
 redisReply **Redis::lrange(const string &key) //返回所有消息
 {
     string cmd = "lrange  " + key + "  0" + "  -1";
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->element;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return nullptr;
+    }else{
+        return reply->element;
+    };
 }
 
 redisReply **Redis::lrange(const string &key, string a, string b) //返回指定的消息记录
 {
     string cmd = "lrange  " + key + "  " + a + "  " + b;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->element;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return nullptr;
+    }else{
+        return reply->element;
+    };
 }
 
 int  Redis::ltrim(const string &key) //删除链表中的所有元素
 {
     string cmd = "ltrim  " + key + " 1 " + " 0 ";
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
-    return reply->type;
+    if(reply == nullptr){
+        cerr << "redis:" << cmd << "失败" << endl;
+        return -1;
+    }else{
+        return reply->type;
+    };
 }
 
 #endif
