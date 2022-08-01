@@ -49,10 +49,10 @@ int TcpSocket::sendMsg(string msg){
     memcpy(data + 4, msg.data(), msg.size());
     // 发送数据
     int ret = writen(data, msg.size() + 4);
-    if(ret == 0){
-        return -1;
-    }
+    // cout << "msg :" << msg << endl;
+    // cout << "ret : " << ret << endl;
     delete[]data;
+    // cout << "delete OK" << endl;
     return ret;
 }
 

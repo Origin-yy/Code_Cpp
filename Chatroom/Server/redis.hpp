@@ -24,6 +24,7 @@ public:
     string gethash(const string &key, const string &field);                      // 获取key哈希表中field对应的值
     bool delhash(const string &key, const string &field);                        // 从哈希表删除指定的元素
     int hlen(const string &key);                                                 // 返回哈希表中的元素个数
+    redisReply **hkeys(const string &key);                                       // 返回哈希表中所有字段
      // set相关操作
     int scard(const string &key);                                                // 返回set集合里的元素个数
     int saddvalue(const string &key, const string &value);                       // 插入到集合
@@ -141,12 +142,18 @@ bool Redis::delhash(const string &key, const string &field){
     };
 }
 
-int Redis::hlen(const string &key) // 返回哈希表中的元素个数
-{
+int Redis::hlen(const string &key){ // 返回哈希表中的元素个数
     string cmd = "hlen  " + key;
     reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
     return reply->integer;
 }
+
+redisReply**Redis::hkeys(const string &key){
+    string cmd = "hkeys  " + key;
+    reply = (redisReply *)redisCommand(redis_s, cmd.c_str());
+    return reply->element;
+}
+
 int Redis::scard(const string &key) // 返回set集合里的元素个数
 {
     string cmd = "scard  " + key;

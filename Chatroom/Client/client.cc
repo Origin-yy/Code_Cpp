@@ -52,10 +52,11 @@ int main(){
             AddGroup(cfd_class, command);
             break;
         case AGREEADDFRIEND :
-cout << "进了函数" << endl;
             AgreeAddFriend(cfd_class, command);
-cout << "函数跑了" << endl;
             break;
+        case LISTFRIEND :
+            ListFriend(cfd_class, command);
+            break;   
         }
     }
 }

@@ -96,7 +96,7 @@ void taskfunc(void *arg){
                     redis.hsetValue(new_uid, "性别", "未知");
                     redis.hsetValue(new_uid, "其他信息", "无");
                     redis.hsetValue(new_uid, "通知套接字", "-1");
-                    redis.hsetValue(new_uid, "好友列表", "空");
+                    redis.hsetValue(new_uid, "好友数量", "空");
                     redis.hsetValue(new_uid, "群聊列表", "空");
                     redis.hsetValue(new_uid, "群聊列表", "空");
                     redis.hsetValue(new_uid, "消息列表", "空");
@@ -107,6 +107,7 @@ void taskfunc(void *arg){
             break;
         }
         case ADDFRIEND:{
+            // 判断准好友是否已在好友列表里
             if(redis.sismember("accounts", command.m_option[0])){
                 cfd_class.sendMsg("ok");
                 string msg = "来自用户" + command.m_uid + "的好友申请.\n" + "验证消息：\n" +
@@ -124,12 +125,35 @@ void taskfunc(void *arg){
             break;
         }
         case AGREEADDFRIEND:{
-            string friend_mark0  = redis.gethash(command.m_option[0], "昵称");                    // 获得0的昵称作为默认备注
-            redis.hsetValue(command.m_uid + "的好友列表", command.m_option[0], friend_mark0);// 在1好友列表里插入0的uid和默认备注
-            cfd_class.sendMsg("ok");                                                                    // 给1回信
-            string friend_mark1 = redis.gethash(command.m_uid, "昵称");                           // 获得1的昵称
-            redis.hsetValue(command.m_option[0] + "的好友列表", command.m_uid, friend_mark1);// 在0的好友列表里插入1的uid和默认备注
-            redis.lpush(command.m_option[0] + "--系统", command.m_uid + "通过了您的好友申请.");      // 在0的系统消息里写入通过消息
+            string friend_mark0  = redis.gethash(command.m_option[0], "昵称");                            // 获得申请者的昵称作为默认备注
+            redis.hsetValue(command.m_uid + "的好友列表", command.m_option[0], friend_mark0);        // 在同意者好友列表里插入申请者的uid和默认备注
+            cfd_class.sendMsg("ok");                                                                            // 给同意者回信
+            string friendNum0 = redis.gethash(command.m_uid, "好友数量");                                  // 获得同意者当前的好友数量
+            redis.hsetValue(command.m_uid, "好友数量", to_string(stoi(friendNum0)+1));     // 同意者的好友数量+1
+
+            string friend_mark1 = redis.gethash(command.m_uid, "昵称");                                   // 获得同意者的昵称
+            redis.hsetValue(command.m_option[0] + "的好友列表", command.m_uid, friend_mark1);        // 在申请者的好友列表里插入申请者的uid和默认备注
+            redis.lpush(command.m_option[0] + "--系统", command.m_uid + "通过了您的好友申请.");              // 在申请者的系统消息里写入通过消息
+            string friendNum1 = redis.gethash(command.m_option[0], "好友数量");                            // 获得申请者当前的好友数量
+            redis.hsetValue(command.m_option[0], "好友数量", to_string(stoi(friendNum1)+1));// 申请者的好友数量+1
+        }
+        case LISTFRIEND : {
+            string friendNum = redis.gethash(command.m_uid, "好友数量");
+            if(friendNum == "0"){
+                cfd_class.sendMsg("none");
+            }else {
+                redisReply **f_uid = redis.hkeys(command.m_uid + "的好友列表");
+                for(int i = 0; i < stoi(friendNum); i++){
+                    string friend_mark = redis.gethash(command.m_uid + "的好友列表", f_uid[i]->str);
+                    string isonline = redis.gethash(f_uid[i]->str, "在线状态");
+                    if(isonline != "-1"){
+                        cfd_class.sendMsg(friend_mark + "-" + f_uid[i]->str + "(*)");
+                    }else {
+                        cfd_class.sendMsg(friend_mark + "-" + f_uid[i]->str + "(-)");
+                    }
+                }
+                cfd_class.sendMsg("end");
+            }
         }
 
     }

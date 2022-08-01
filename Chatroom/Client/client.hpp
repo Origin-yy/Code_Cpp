@@ -83,8 +83,8 @@ string Login(TcpSocket cfd_class){
     }else if(check == "ok"){
         // 登录成功就新建一个线程等回信
         pthread_t tid;
-        RecvArg *recv_arg = new RecvArg(input_uid,cfd_class.getrecvfd());
-        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(recv_arg));
+        RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
+        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
         ret = pthread_detach(tid);
         if(ret != 0){
             my_error("pthread_detach()");
@@ -176,4 +176,29 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         cout << "未找到该用户的好友申请." << endl;
         return false;
     }
+}
+
+bool ListFriend(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string Friend = cfd_class.recvMsg();
+        if(Friend == "end"){
+            cout << "好友展示完毕" << endl;
+            break;
+        }else if(Friend == "none"){
+            cout << "您当前还还没有好友" << endl;
+            break;
+        }else if(Friend == "clos"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << Friend << endl;
+        }
+    }
+    return true;
+
 }
