@@ -48,15 +48,18 @@ int main(){
         case ADDFRIEND :
             AddFriend(cfd_class, command);
             break;
-        case ADDGROUP :
-            AddGroup(cfd_class, command);
-            break;
+        // case ADDGROUP :
+        //     AddGroup(cfd_class, command);
+        //     break;
         case AGREEADDFRIEND :
             AgreeAddFriend(cfd_class, command);
             break;
         case LISTFRIEND :
             ListFriend(cfd_class, command);
             break;   
+        case CHATFRIEND :
+            ChatFriend(cfd_class, command);
+            break; 
         }
     }
 }

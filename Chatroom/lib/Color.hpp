@@ -14,15 +14,15 @@
 // #define   21-29 基本与1-9正好相反
 // #define   30-37 设置前景色
 // #define   40-47 设置背景色
-// #define    NONE        "\e[0m"
-// #define    L_BLACK     "\e[1;30m"
-// #define    L_RED       "\e[1;31m"
-// #define    L_GREEN     "\e[1;32m"
-// #define    L_YELLOW    "\e[1;33m"
-// #define    L_BLUE      "\e[1;34m"
-// #define    L_PURPLE    "\e[1;35m"
-// #define    L_D_GREEN   "\e[1;36m"
-// #define    L_WHITE     "\e[1;37m"
+#define    NONE        "\e[0m"
+#define    L_GREY      "\e[1;30m"
+#define    L_RED       "\e[1;31m"
+#define    L_GREEN     "\e[1;32m"
+#define    L_YELLOW    "\e[1;33m"
+#define    L_BLUE      "\e[1;34m"
+#define    L_PURPLE    "\e[1;35m"
+#define    L_D_GREEN   "\e[1;36m"
+#define    L_WHITE     "\e[1;37m"
 // #define   38 打开下划线,设置默认前景色
 // #define   39 关闭下划线,设置默认前景色
 // #define   40 黑色背景

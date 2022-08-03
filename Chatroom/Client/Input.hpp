@@ -8,10 +8,10 @@ using namespace std;
 #define LOGHIN_CHECK    1
 #define REGISTER_CHECK  2
 #define ADDFRIEND       3
-#define ADDGROUP        4
-#define AGREEADDFRIEND  6
-#define LISTFRIEND      7
-#define LISTGROUP       8
+#define AGREEADDFRIEND  4
+#define LISTFRIEND      5
+#define CHATFRIEND      6
+#define FRIENDMSG       7
 
 string get_login();
 string get_uid();
@@ -111,23 +111,30 @@ Command get_command(string my_uid){
                 string option1(input.begin()+16, input.end()); 
                 Command command(my_uid, ADDFRIEND, {option0, option1});
                 return command;
-            }else{
+            }else if(input.size() > 115){
+                cout << "验证消息最多100个字节" << endl;
+                cout << "请输入您想进行的操作:" << endl;
+                cin.sync();
+                getline(cin, input);
+                continue;
+            }
+            else{
                 Command command(my_uid, ADDFRIEND, {option0, "无"});
                 return command;
             }
         }
-        // 添加群聊命令是否合法
-        else if(input.find("add-group-") == 0 && input.size() >= 14){
-            string option0(input.begin()+10, input.begin()+14);
-            if(input.size() > 14 && input[13] == '-'){
-                string option1(input.begin()+14, input.end()); 
-                Command command(my_uid, ADDGROUP, {option0, option1});
-                return command;
-            }else{
-                Command command(my_uid, ADDGROUP, {option0, "无"});
-                return command;
-            }
-        }
+        // // 添加群聊命令是否合法
+        // else if(input.find("add-group-") == 0 && input.size() >= 14){
+        //     string option0(input.begin()+10, input.begin()+14);
+        //     if(input.size() > 14 && input[13] == '-'){
+        //         string option1(input.begin()+14, input.end()); 
+        //         Command command(my_uid, ADDGROUP, {option0, option1});
+        //         return command;
+        //     }else{
+        //         Command command(my_uid, ADDGROUP, {option0, "无"});
+        //         return command;
+        //     }
+        // }
         // 同意好友申请命令是否合法
         else if(input.find("agree-friend-") == 0 && input.size() >=17){
             string option0(input.begin()+13,input.end());
@@ -140,14 +147,18 @@ Command get_command(string my_uid){
             Command command(my_uid, LISTFRIEND, {option0});
             return command;
         }
-        // 展示群组列表命令是否合法
-        else if(input == "list-group"){
-            string option0 = "list-group";
-            Command command(my_uid, LISTGROUP, {option0});
+        // // 展示群组列表命令是否合法
+        // else if(input == "list-group"){
+        //     string option0 = "list-group";
+        //     Command command(my_uid, LISTGROUP, {option0});
+        //     return command;
+        // }
+        // 
+        else if(input.find("chat-friend-") == 0 && input.size() > 12){
+            string option0(input.begin() + 12, input.end());
+            Command command(my_uid, CHATFRIEND, {option0});
             return command;
         }
-        // 
-        
         
         
         
