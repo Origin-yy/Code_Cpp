@@ -14,6 +14,7 @@
 #include <hiredis/hiredis.h> 
 #include <ctime>
 #include <unistd.h>
+#include <cstdlib>
 
 #define QUIT            0
 #define LOGHIN_CHECK    1
@@ -23,6 +24,7 @@
 #define LISTFRIEND      5
 #define CHATFRIEND      6
 #define FRIENDMSG       7
+#define EXITCHAT        8
 
 struct Argc_func{
 public:
@@ -79,6 +81,8 @@ void taskfunc(void *arg){
                     cout << "已发送ok" << endl;  
                     redis.hsetValue(command.m_uid, "在线状态", to_string(cfd_class.getfd()));
                     redis.hsetValue("fd-uid对应表", to_string(cfd_class.getfd()), command.m_uid);
+                    redis.hsetValue(command.m_uid, "聊天对象", "0");
+                    redis.hsetValue(command.m_uid, "通知套接字", "-1");
                 }
             }
             break;
@@ -101,6 +105,7 @@ void taskfunc(void *arg){
                     redis.hsetValue(new_uid, "好友数量", "0");
                     redis.hsetValue(new_uid, "群聊数量", "0");
                     redis.hsetValue(new_uid, "消息数量", "0");
+                    redis.hsetValue(new_uid, "聊天对象", "无");
                     cfd_class.sendMsg(new_uid);
                     break;
                 }
@@ -205,19 +210,46 @@ void taskfunc(void *arg){
             if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
                 cfd_class.sendMsg("nofind");
             }else{
-                // 好友列表里有这个人就发送历史聊天记录
                 cfd_class.sendMsg("ok");
+                // 好友列表里有这个人就发送历史聊天记录，并把客户端的的聊天对象改为该好友
                 int HistoryMsgNum = redis.llen(command.m_uid + "--" + command.m_option[0]);
                 redisReply** MsgHistory = redis.lrange(command.m_uid + "--" + command.m_option[0]);
                 for(int i = 0; i < HistoryMsgNum; i++){
                     cfd_class.sendMsg(MsgHistory[i]->str);
                 }
+                redis.hsetValue(command.m_uid, "聊天对象", command.m_option[0]);
             }
             break;
         }
         case FRIENDMSG:{
-            string Msg = command.m_uid + ": " + command.m_option[1] + GetNowTime();
-            redis.lpush(command.m_uid + "--" + command.m_option[0], Msg);
+            // 将新的消息加入到两个人的两个消息队列
+            string me = "我：";
+            string Msg = command.m_option[1] + GetNowTime();
+            redis.lpush(command.m_uid + "--" + command.m_option[0],"我：" + Msg);
+            redis.lpush(command.m_option[0] + "--" + command.m_uid, command.m_uid + "："+ Msg);
+
+            // 如果好友在线且处于和自己的聊天界面，就把消息内容发给通知套接字；
+            // 如果好友在线但不处于和自己的聊天界面，就把提示消息发给通知套接字
+            // 如果好友不在线，不给通知套接字发消息，但是把消息添加到未读消息队列里
+            string online = redis.gethash(command.m_option[0], "在线状态");
+            string ChatFriend = redis.gethash(command.m_option[0], "聊天对象");
+            if(online != "-1" && ChatFriend == command.m_uid){
+                string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+                TcpSocket friendFd_class(Msg);
+                break;
+            }else if(online != "-1" && ChatFriend != command.m_uid){
+                string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+                TcpSocket friendFd_class(stoi(friend_recvfd));
+                friendFd_class.sendMsg(command.m_uid + "发来了一条消息" + GetNowTime());
+                break;
+            }else if(online == "-1" ){
+                // 加入到未读消息队列
+                break;
+            };
+        }
+        case EXITCHAT:{
+            redis.hsetValue(command.m_uid, "聊天对象", "0");
+            cfd_class.sendMsg("ok");
         }
 
     }

@@ -12,6 +12,7 @@ using namespace std;
 #define LISTFRIEND      5
 #define CHATFRIEND      6
 #define FRIENDMSG       7
+#define EXITCHAT        8
 
 string get_login();
 string get_uid();

@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <string>
 #include <signal.h>
+#include <cstdlib>
 
 void my_error(const char* errorMsg);
 void *recvfunc(void* arg);
@@ -87,10 +88,15 @@ string Login(TcpSocket cfd_class){
         // 登录成功就新建一个线程等回信
         pthread_t tid;
         RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
-        pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
+        ret = pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
+        if(ret != 0){
+            my_error("pthread_create()");
+            exit(0);
+        }
         ret = pthread_detach(tid);
         if(ret != 0){
             my_error("pthread_detach()");
+            exit(0);
         }
         cout << "登录成功" << endl;
         return input_uid;
@@ -212,36 +218,47 @@ bool ListFriend(TcpSocket cfd_class, Command command){
 }
 
 bool ChatFriend(TcpSocket cfd_class, Command command){
-    // 发送聊天并检查回复
-    int ret = cfd_class.sendMsg(command.To_Json());
+    int ret = cfd_class.sendMsg(command.To_Json());  // 发送聊天请求
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl; 
         return false;
         exit(0);
-    }
-    string check = cfd_class.recvMsg();
+    }            
+    string check = cfd_class.recvMsg();        // 检查回复
     if(check == "nofind"){
         cout << "未找到该好友" << endl;
         return false;
     }
     // 有这个好友就打印历史聊天记录
     else if(check == "ok"){
-        string HistoryMsg = cfd_class.recvMsg();
+        string HistoryMsg;
         while(true){
+            HistoryMsg = cfd_class.recvMsg();
             cout << HistoryMsg << endl;
             if(HistoryMsg == "以上为历史聊天记录"){
                 break;
             }
         }
-        // 给好友发送消息,^[ (ESC） 退出
+        // 给好友发送消息,^[ (ESC） 退出聊天，并更改自己的聊天对象
         string msg;
         while(true){
             cout << "请输入想要发送的消息：" << endl; 
             getline(cin,msg);
+            // 用户想退出聊天界面，送请求并等待服务器处理完毕
             if(msg == "^["){
-                cout << "已退出聊天界面" << endl;
-                return true;
+                Command command_msg(command.m_uid, EXITCHAT, {"0"});
+                int ret = cfd_class.sendMsg(command.To_Json());  // 退出聊天请求
+                if(ret == 0 || ret == -1){
+                    cout << "服务器已关闭." << endl; 
+                    return false;
+                    exit(0);
+                }   
+                if(cfd_class.recvMsg() == "ok"){                
+                    cout << "已退出聊天界面" << endl;
+                }
+                break;
             }
+            // 把消息包装好，让服务器转发
             json msg_js = msg;
             Command command_msg(command.m_uid, FRIENDMSG, {command.m_option[0],msg});
             int ret = cfd_class.sendMsg(command_msg.To_Json());

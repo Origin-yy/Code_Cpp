@@ -10,12 +10,13 @@ int main(){
     signal(SIGTSTP,SIG_IGN);  // 忽略 Ctrl Z
     //signal(SIGINT,SIG_IGN);             // 忽略 Ctrl C
     string begin;          // 登录或者注册
-    TcpSocket cfd_class("recv");   // 本客户端的套接字类
     Command command;       // 要发送的命令类
+    TcpSocket cfd_class("recv");   // 本客户端的套接字类
     // 连接服务器
     ret = cfd_class.connectToHost("127.0.0.1", 6666);
     if(ret == -1){
         my_error("connect()");
+        exit(0);
     }
     //选择登录、注册、退出操作,并进入不同的函数
 
