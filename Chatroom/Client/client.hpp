@@ -19,6 +19,8 @@ bool AddFriend(TcpSocket cfd_class, Command command);
 bool AddGroup(TcpSocket cfd_class, Command command);
 bool AgreeAddFriend(TcpSocket cfd_class, Command command);
 bool ListFirHistory(TcpSocket cfd_class, Command command);
+bool ChatFriend(TcpSocket cfd_class, Command command);
+bool ExitChatFriend(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -37,7 +39,12 @@ void my_error(const char* errorMsg){
 void *recvfunc(void* arg){
     RecvArg *recv_arg = static_cast<RecvArg*>(arg);
     TcpSocket recv_class(recv_arg->recv_fd);
-    recv_class.sendMsg(recv_arg->myuid);
+    Command command(recv_arg->myuid, SETRECVFD, {"空"});
+    int ret = recv_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭" << endl;
+        exit(0);
+    }
     while(true){
         string message = recv_class.recvMsg();
         if(message == "close" || message == "-1"){
@@ -46,6 +53,7 @@ void *recvfunc(void* arg){
         }
         cout << message << endl;
     }
+    delete [] recv_arg;
     return nullptr;
 }
 
@@ -67,7 +75,6 @@ string Login(TcpSocket cfd_class){
     int ret = cfd_class.sendMsg(command.To_Json());  // 命令类将类转josn格式，再转json字符串格式，套接字类发送json字符串格式
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭" << endl;
-        return "close";
         exit(0);
     }
     // 收到操作结果
@@ -76,7 +83,6 @@ string Login(TcpSocket cfd_class){
     cout << "收到" << endl;
     cout << check << endl;
     if (check == "close" || check == "-1"){
-        return "close";
         exit(0);
     }else if(check == "incorrect"){
         cout << "账号或密码错误." << endl;
@@ -87,8 +93,8 @@ string Login(TcpSocket cfd_class){
     }else if(check == "ok"){
         // 登录成功就新建一个线程等回信
         pthread_t tid;
-        RecvArg recv_arg(input_uid,cfd_class.getrecvfd());
-        ret = pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(&recv_arg));
+        RecvArg *recv_arg = new RecvArg(input_uid,cfd_class.getrecvfd());
+        ret = pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(recv_arg));
         if(ret != 0){
             my_error("pthread_create()");
             exit(0);
@@ -221,7 +227,6 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());  // 发送聊天请求
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl; 
-        return false;
         exit(0);
     }            
     string check = cfd_class.recvMsg();        // 检查回复
@@ -230,10 +235,14 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         return false;
     }
     // 有这个好友就打印历史聊天记录
-    else if(check == "ok"){
+    else if(check == "have"){
         string HistoryMsg;
         while(true){
             HistoryMsg = cfd_class.recvMsg();
+            if(HistoryMsg == "close" || HistoryMsg == "-1"){
+                cout << "服务器已关闭" << endl;
+                exit(0);
+            }
             cout << HistoryMsg << endl;
             if(HistoryMsg == "以上为历史聊天记录"){
                 break;
@@ -245,12 +254,11 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             cout << "请输入想要发送的消息：" << endl; 
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
-            if(msg == "^["){
+            if(msg == "exit"){
                 Command command_msg(command.m_uid, EXITCHAT, {"0"});
                 int ret = cfd_class.sendMsg(command.To_Json());  // 退出聊天请求
                 if(ret == 0 || ret == -1){
                     cout << "服务器已关闭." << endl; 
-                    return false;
                     exit(0);
                 }   
                 if(cfd_class.recvMsg() == "ok"){                
@@ -264,10 +272,12 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             int ret = cfd_class.sendMsg(command_msg.To_Json());
             if(ret == 0 || ret == -1){
                 cout << "服务器已关闭." << endl; 
-                return false;
                 exit(0);
             }
         }
     }
     return true;
+}
+bool ExitChatFriend(TcpSocket cfd_class, Command command){
+    
 }

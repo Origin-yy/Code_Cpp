@@ -11,7 +11,7 @@ int main(){
     //signal(SIGINT,SIG_IGN);             // 忽略 Ctrl C
     string begin;          // 登录或者注册
     Command command;       // 要发送的命令类
-    TcpSocket cfd_class("recv");   // 本客户端的套接字类
+    TcpSocket cfd_class("recv");   // 本客户端的套接字类（交互套接字和通信套接字）
     // 连接服务器
     ret = cfd_class.connectToHost("127.0.0.1", 6666);
     if(ret == -1){
@@ -60,6 +60,10 @@ int main(){
             break;   
         case CHATFRIEND :
             ChatFriend(cfd_class, command);
+            break; 
+        }
+        case EXITCHAT :
+            ExitChat(cfd_class, command);
             break; 
         }
     }

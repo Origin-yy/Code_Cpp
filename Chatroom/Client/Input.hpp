@@ -4,6 +4,7 @@
 
 using namespace std;
 
+#define SETRECVFD      -1
 #define QUIT            0
 #define LOGHIN_CHECK    1
 #define REGISTER_CHECK  2
