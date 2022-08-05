@@ -42,6 +42,7 @@ void *recvfunc(void* arg){
     Command command(recv_arg->myuid, SETRECVFD, {"空"});
     int ret = recv_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
+        delete [] recv_arg;
         cout << "服务器已关闭" << endl;
         exit(0);
     }
@@ -49,11 +50,11 @@ void *recvfunc(void* arg){
         string message = recv_class.recvMsg();
         if(message == "close" || message == "-1"){
             cout << "通知套接字已关闭" << endl;
-            break;
+            delete [] recv_arg;
+            exit(0);
         }
         cout << message << endl;
     }
-    delete [] recv_arg;
     return nullptr;
 }
 
@@ -184,6 +185,7 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         exit (0);
     }
     string check = cfd_class.recvMsg();
+cout << check << endl;
     if(check == "close"){
         cout << "服务器已关闭." << endl;
         exit (0);
@@ -242,7 +244,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             if(HistoryMsg == "close" || HistoryMsg == "-1"){
                 cout << "服务器已关闭" << endl;
                 exit(0);
-            }
+            } 
             cout << HistoryMsg << endl;
             if(HistoryMsg == "以上为历史聊天记录"){
                 break;
@@ -254,20 +256,12 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             cout << "请输入想要发送的消息：" << endl; 
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
-            if(msg == "exit"){
-                Command command_msg(command.m_uid, EXITCHAT, {"0"});
-                int ret = cfd_class.sendMsg(command.To_Json());  // 退出聊天请求
-                if(ret == 0 || ret == -1){
-                    cout << "服务器已关闭." << endl; 
-                    exit(0);
-                }   
-                if(cfd_class.recvMsg() == "ok"){                
-                    cout << "已退出聊天界面" << endl;
-                }
+            if(msg == "#"){
+                Command command_exit(command.m_uid,EXITCHAT,{"空"});
+                ExitChatFriend(cfd_class, command_exit);
                 break;
             }
             // 把消息包装好，让服务器转发
-            json msg_js = msg;
             Command command_msg(command.m_uid, FRIENDMSG, {command.m_option[0],msg});
             int ret = cfd_class.sendMsg(command_msg.To_Json());
             if(ret == 0 || ret == -1){
@@ -279,5 +273,21 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
     return true;
 }
 bool ExitChatFriend(TcpSocket cfd_class, Command command){
-    
+    int ret = cfd_class.sendMsg(command.To_Json());  // 发送退出聊天请求
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << "已退出聊天" << endl;
+        return true;
+    }else if (check == "no"){
+        cout << "无效的操作，请重新输入." << endl;
+        return false;
+    }
+    return false;
 }

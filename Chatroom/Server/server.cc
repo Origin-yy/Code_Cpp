@@ -57,11 +57,14 @@ int main(){
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
                 // cout << "command_string: " << command_string << endl;
-                // 如果客户异常端挂了，socket类里关fd，并修改用户信息，摘符
+                // 如果客户异常端挂了，socket类里关fd，并修改用户信息，摘符，告知其通知套接字关闭,线程退出
                 if(command_string == "close" || command_string == "-1" || command_string == "quit"){    
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
                     cout << "cuid : " << cuid << endl;
                     redis.hsetValue(cuid, "在线状态", "-1");
+                    string recv_fd = redis.gethash(cuid, "通知套接字");
+                    TcpSocket recv_class(recv_fd);
+                    recv_class.sendMsg("close");
                     redis.hsetValue(cuid, "通知套接字", "-1");
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
                     cout << "客户端断开连接" << endl;

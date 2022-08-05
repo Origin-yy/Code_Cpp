@@ -177,7 +177,7 @@ void taskfunc(void *arg){
                 if(online != "-1"){
                     string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
                     TcpSocket friendFd_class(stoi(friend_recvfd));
-                    friendFd_class.sendMsg(command.m_uid + "已通过了您的好友申请" + GetNowTime());
+                    friendFd_class.sendMsg(command.m_uid + "已通过了您的好友申请." + GetNowTime());
                     cfd_class.sendMsg("ok");
                     break;
                 }else{
@@ -239,7 +239,7 @@ void taskfunc(void *arg){
             if(online != "-1" && ChatFriend == command.m_uid){
                 string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
                 TcpSocket friendFd_class(stoi(friend_recvfd));
-                friendFd_class.sendMsg(Msg);
+                friendFd_class.sendMsg("\b\b\b\b\b\b\b\b\b\b\b\b" + Msg + "请输入想要发送的消息");
                 break;
             }else if(online != "-1" && ChatFriend != command.m_uid){
                 string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
@@ -252,8 +252,14 @@ void taskfunc(void *arg){
             };
         }
         case EXITCHAT:{
-            redis.hsetValue(command.m_uid, "聊天对象", "0");
-            cfd_class.sendMsg("ok");
+            if (redis.gethash(command.m_uid, "聊天对象") == "0"){
+                cfd_class.sendMsg("no");
+                break;
+            }else{
+                redis.hsetValue(command.m_uid, "聊天对象", "0");
+                cfd_class.sendMsg("ok");
+                break;
+            }
         }
 
     }
