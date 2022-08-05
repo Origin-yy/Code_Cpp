@@ -64,6 +64,9 @@ int main(){
         case EXITCHAT :
             ExitChatFriend(cfd_class, command);
             break; 
+        case SHIELDFRIEND :
+            ShieldFriend(cfd_class, command);
+            break;
         }
     }
 }

@@ -77,13 +77,13 @@ void taskfunc(void *arg){
                 }else if(redis.gethash(command.m_uid, "在线状态") != "-1"){  // 用户在登录
                     cfd_class.sendMsg("online");
                 }
-                else{            // 可以登录，并改变登录状态
-                    cfd_class.sendMsg("ok");
-                    cout << "已发送ok" << endl;  
+                else{            // 可以登录，并改变登录状态 
                     redis.hsetValue(command.m_uid, "在线状态", to_string(cfd_class.getfd()));
                     redis.hsetValue("fd-uid对应表", to_string(cfd_class.getfd()), command.m_uid);
                     redis.hsetValue(command.m_uid, "聊天对象", "0");
                     redis.hsetValue(command.m_uid, "通知套接字", "-1");
+                    cfd_class.sendMsg("ok");
+                    cout << "已发送ok" << endl; 
                 }
             }
             break;
@@ -202,7 +202,7 @@ void taskfunc(void *arg){
                     if(isonline != "-1"){
                         cfd_class.sendMsg(L_GREEN + friend_mark + NONE + "(" + f_uid[i]->str + ")");
                     }else {
-                        cfd_class.sendMsg(L_GREY + friend_mark + NONE + "(" + f_uid[i]->str + ")");
+                        cfd_class.sendMsg(L_WHITE + friend_mark + NONE + "(" + f_uid[i]->str + ")");
                     }
                 }
                 cfd_class.sendMsg("end");

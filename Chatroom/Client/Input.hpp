@@ -14,6 +14,8 @@ using namespace std;
 #define CHATFRIEND      6
 #define FRIENDMSG       7
 #define EXITCHAT        8
+#define SHIELDFRIEND    9
+
 
 string get_login();
 string get_uid();
@@ -161,10 +163,17 @@ Command get_command(string my_uid){
             Command command(my_uid, CHATFRIEND, {option0});
             return command;
         }
-        
-        
-        
-        
+
+        else if(input.find("shield-friend-" == 0) && input.size() > 14){
+            string option0(input.begin() + 14, input.end());
+            Command command(my_uid, SHIELDFRIEND, {option0});
+            return command;
+        }
+
+
+
+
+
         // 退出命令是否合法
         else if(input == "quit"){
             Command command(my_uid, QUIT, {"无"});

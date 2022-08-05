@@ -56,17 +56,17 @@ int main(){
             else {
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
-                // cout << "command_string: " << command_string << endl;
-                // 如果客户异常端挂了，socket类里关fd，并修改用户信息，摘符，告知其通知套接字关闭,线程退出
+
+                // 如果客户端挂了，socket类里关fd，并修改用户信息，摘符
                 if(command_string == "close" || command_string == "-1" || command_string == "quit"){    
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
-                    cout << "cuid : " << cuid << endl;
-                    redis.hsetValue(cuid, "在线状态", "-1");
-                    string recv_fd = redis.gethash(cuid, "通知套接字");
-                    TcpSocket recv_class(recv_fd);
-                    recv_class.sendMsg("close");
-                    redis.hsetValue(cuid, "通知套接字", "-1");
+                    if(cuid.size() == 4){
+                        cout << "cuid : " << cuid << endl;
+                        redis.hsetValue(cuid, "在线状态", "-1");
+                        redis.hsetValue(cuid, "通知套接字", "-1");
+                    }
                     epoll_ctl(epfd,EPOLL_CTL_DEL,cfd_class.getfd(),&temp);
+                    redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), "-1");
                     cout << "客户端断开连接" << endl;
                     continue;
                 }
@@ -77,7 +77,7 @@ int main(){
                 // 如果是通知套接字来消息，说明是告诉服务器该通知套接字属于那个账号，更改这个账号的通知套接字并加在fd-uid对应表里，不运行任务函数
                 if(command.m_flag == SETRECVFD){
                     redis.hsetValue(command.m_uid, "通知套接字", to_string(ep[i].data.fd));
-                    redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command.m_uid);
+                    redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command.m_uid + "(通)");
                 }
                 else{// 不是通知套接字消息，说明是用户的命令，把命令和客户端套接字传进任务函数进行处理
                     Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
