@@ -42,7 +42,7 @@ void *recvfunc(void* arg){
     Command command(recv_arg->myuid, SETRECVFD, {"空"});
     int ret = recv_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
-        delete [] recv_arg;
+        delete recv_arg;
         cout << "服务器已关闭" << endl;
         exit(0);
     }
@@ -50,7 +50,7 @@ void *recvfunc(void* arg){
         string message = recv_class.recvMsg();
         if(message == "close" || message == "-1"){
             cout << "通知套接字已关闭" << endl;
-            delete [] recv_arg;
+            delete recv_arg;
             exit(0);
         }
         cout << message << endl;
@@ -79,10 +79,10 @@ string Login(TcpSocket cfd_class){
         exit(0);
     }
     // 收到操作结果
-    cout << "准备收到" << endl;
+    // cout << "准备收到" << endl;
     string check = cfd_class.recvMsg();
-    cout << "收到" << endl;
-    cout << check << endl;
+    // cout << "收到" << endl;
+    // cout << check << endl;
     if (check == "close" || check == "-1"){
         exit(0);
     }else if(check == "incorrect"){
@@ -283,6 +283,7 @@ bool ExitChatFriend(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
+        system("clrear");
         cout << "已退出聊天" << endl;
         return true;
     }else if (check == "no"){

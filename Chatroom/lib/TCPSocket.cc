@@ -65,7 +65,7 @@ string TcpSocket::recvMsg(){
         return "close";
     }
     len = ntohl(len);
-    cout << "数据块大小: " << len << endl;
+    // cout << "数据块大小: " << len << endl;
     // 根据读出的长度分配内存
     char* buf = new char[len + 1];
     ret = readn(buf, len);
