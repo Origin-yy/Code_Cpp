@@ -22,6 +22,7 @@ bool ListFirHistory(TcpSocket cfd_class, Command command);
 bool ChatFriend(TcpSocket cfd_class, Command command);
 bool ExitChatFriend(TcpSocket cfd_class, Command command);
 bool ShieldFriend(TcpSocket cfd_class, Command command);
+bool DeleteFriend(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -254,7 +255,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         // 给好友发送消息,^[ (ESC） 退出聊天，并更改自己的聊天对象
         string msg;
         while(true){
-            cout << "请输入想要发送的消息：" << endl; 
+            cout << "我："; 
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
             if(msg == "#"){
@@ -305,9 +306,34 @@ bool ShieldFriend(TcpSocket cfd_class, Command command){
     if(check == "close"){
         cout << "服务器已关闭." << endl;
         exit (0);
+    }else if(check == "no"){
+        cout << "未找到该好友." << endl;
+        return false;
     }else if(check == "ok"){
-        system("clear");
-        cout << "已退出聊天" << endl;
+        cout << "已屏蔽该好友." << endl;
+        return true;
+    }else{
+        cout << "该好友已被屏蔽." << endl;
+    }
+    return false;
+}
+
+bool DeleteFriend(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit(0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "nofind"){
+        cout << "未找到该好友." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "已删除该好友." << endl;
         return true;
     }
+    return false;
 }

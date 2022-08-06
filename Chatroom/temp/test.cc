@@ -15,8 +15,10 @@ int main(){
     //     cin >> test1;
     //     cout << "jixu3" <<endl;
     // }
-    string test = "1234  ]\n12344";
-    jn 
+    string asdf = "add";
+    if(asdf.find("add-friend") == 0){
+        cout << "ok" << endl;
+    }else{cout << "k" << endl;}
 
 
 

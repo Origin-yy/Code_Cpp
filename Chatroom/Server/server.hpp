@@ -26,6 +26,8 @@
 #define CHATFRIEND      6
 #define FRIENDMSG       7
 #define EXITCHAT        8
+#define SHIELDFRIEND    9
+#define DELETEFRIEND   10
 
 struct Argc_func{
 public:
@@ -106,6 +108,7 @@ void taskfunc(void *arg){
                     redis.hsetValue(new_uid, "好友数量", "0");
                     redis.hsetValue(new_uid, "群聊数量", "0");
                     redis.hsetValue(new_uid, "消息数量", "0");
+                    redis.hsetValue(new_uid, "屏蔽数量", "0");
                     redis.hsetValue(new_uid, "聊天对象", "无");
                     cfd_class.sendMsg(new_uid);
                     break;
@@ -134,7 +137,7 @@ void taskfunc(void *arg){
             // 不在就添加他，发送申请
             else if(redis.sismember("accounts", command.m_option[0])){                // 不在就判断准好友的账户是否存在
                 // 账户存在就在准好友的列表里更新自己的申请消息，只会存在一条由自己发来的好友申请，一旦申请通过，申请者不能再发申请，接收者不能再同意申请（申请和同意都要查好友列表里是否有该好友）
-                redis.hsetValue(command.m_option[0] + "--系统", command.m_option[0], command.m_option[1] + GetNowTime());
+                redis.hsetValue(command.m_option[0] + "--系统", command.m_uid, command.m_option[1] + GetNowTime());
                 // 如果准好友在线，给他的通知套接字一个提醒,不在就只加入到未读消息列表
                 string online = redis.gethash(command.m_option[0], "在线状态");
                 if(online != "-1"){
@@ -188,6 +191,7 @@ void taskfunc(void *arg){
                 cfd_class.sendMsg("had");
                 break;
             }
+            break;
         }
         case LISTFRIEND : {
             string friendNum = redis.gethash(command.m_uid, "好友数量");     // 获得账户信息中的好友数量
@@ -207,6 +211,7 @@ void taskfunc(void *arg){
                 }
                 cfd_class.sendMsg("end");
             }
+            break;
         }
         case CHATFRIEND:{
             if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
@@ -228,28 +233,37 @@ void taskfunc(void *arg){
             // 将新的消息加入到两个人的两个消息队列
             string me = "我：";
             string Msg = command.m_option[1] + GetNowTime();
-            redis.lpush(command.m_uid + "--" + command.m_option[0],"我：" + Msg);
-            redis.lpush(command.m_option[0] + "--" + command.m_uid, command.m_uid + "："+ Msg);
+            redis.lpush(command.m_uid + "--" + command.m_option[0],"我：" + Msg);// 把聊天消息加入到我的聊天队列里
+            bool sheild = false;
+            // 如果好友把自己屏蔽的话，什么都不做，直接返回，如果没有被屏蔽，就进行下面的操作：  
+            if(redis.gethash(command.m_option[0], "屏蔽数量") != "0"){
+                if(redis.hashexists(command.m_option[0] + "的屏蔽列表", command.m_uid)){
+                    sheild = true;
+                }
+            }
+            if(sheild == false){
+                redis.lpush(command.m_option[0] + "--" + command.m_uid, command.m_uid + "："+ Msg);  // 把消息加入的好友的聊天队列
 
-            // 如果好友在线且处于和自己的聊天界面，就把消息内容发给通知套接字；
-            // 如果好友在线但不处于和自己的聊天界面，就把提示消息发给通知套接字
-            // 如果好友不在线，不给通知套接字发消息，但是把消息添加到未读消息队列里
-            string online = redis.gethash(command.m_option[0], "在线状态");
-            string ChatFriend = redis.gethash(command.m_option[0], "聊天对象");
-            if(online != "-1" && ChatFriend == command.m_uid){
-                string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
-                TcpSocket friendFd_class(stoi(friend_recvfd));
-                friendFd_class.sendMsg("\b\b\b\b\b\b\b\b\b\b\b\b" + Msg + "请输入想要发送的消息");
-                break;
-            }else if(online != "-1" && ChatFriend != command.m_uid){
-                string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
-                TcpSocket friendFd_class(stoi(friend_recvfd));
-                friendFd_class.sendMsg(command.m_uid + "发来了一条消息" + GetNowTime());
-                break;
-            }else if(online == "-1" ){
-                // 加入到未读消息队列
-                break;
-            };
+                // 如果好友把自己屏蔽的话，啥都不做，如果没有被屏蔽，就进行下面的操作：
+                // 如果好友在线且处于和自己的聊天界面，就把消息内容发给通知套接字；
+                // 如果好友在线但不处于和自己的聊天界面，就把提示消息发给通知套接字
+                // 如果好友不在线，不给通知套接字发消息，但是把消息添加到未读消息队列里
+                string online = redis.gethash(command.m_option[0], "在线状态");
+                string ChatFriend = redis.gethash(command.m_option[0], "聊天对象");
+                if(online != "-1" && ChatFriend == command.m_uid){
+                    string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    string name = redis.gethash(command.m_uid + "的好友列表", command.m_option[0]);
+                    friendFd_class.sendMsg("\r\b" + name + "："+ Msg + "\n" + me);
+                }else if(online != "-1" && ChatFriend != command.m_uid){
+                    string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    friendFd_class.sendMsg(command.m_uid + "发来了一条消息" + GetNowTime());
+                }else if(online == "-1" ){
+                    // 加入到未读消息队列
+                };
+            }
+            break;
         }
         case EXITCHAT:{
             if (redis.gethash(command.m_uid, "聊天对象") == "0"){
@@ -261,7 +275,58 @@ void taskfunc(void *arg){
                 break;
             }
         }
-
+        case SHIELDFRIEND:{
+            if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
+                cfd_class.sendMsg("no");
+            }else{
+                string shieldNum = redis.gethash(command.m_uid, "屏蔽数量");
+                if(shieldNum == "0"){
+                    redis.saddvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
+                    redis.hsetValue(command.m_uid, "屏蔽数量", to_string(stoi(shieldNum) + 1));
+                    cfd_class.sendMsg("ok");
+                    break;
+                }else{
+                    bool had = false;
+                    redisReply** shield_list = redis.hkeys(command.m_uid + "的屏蔽列表");    
+                    for(int i = 0; i < stoi(shieldNum); i++){                            
+                        if(shield_list[i]->str == command.m_option[0]){
+                            had = true;
+                            break;
+                        }
+                    }
+                    if(had == true){ 
+                        cfd_class.sendMsg("had");
+                        break;
+                    }else{
+                        redis.saddvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
+                        redis.hsetValue(command.m_uid, "屏蔽数量", to_string(stoi(shieldNum) + 1));
+                        cfd_class.sendMsg("ok");
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        case DELETEFRIEND:{
+            if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
+                cfd_class.sendMsg("nofind");
+                break;
+            }else{
+                // 双方好友列表删除对方
+                redis.delhash(command.m_uid + "的好友列表", command.m_option[0]);
+                redis.delhash(command.m_option[0] + "的好友列表", command.m_uid);
+                // 双方好友数量-1
+                string friendNum0 = redis.gethash(command.m_uid, "好友数量");
+                redis.hsetValue(command.m_uid, "好友数量", to_string(stoi(friendNum0)+1));
+                string friendNum1 = redis.gethash(command.m_option[0], "好友数量");
+                redis.hsetValue(command.m_option[0], "好友数量", to_string(stoi(friendNum1)+1));
+                // 告诉被删者
+                redis.hsetValue(command.m_option[0] + "的系统消息", command.m_uid + "删除了您", GetNowTime());
+                cfd_class.sendMsg("ok");
+                break;
+            }
+        }
+        break;
     }
     return;
 }

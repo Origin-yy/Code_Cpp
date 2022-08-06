@@ -67,6 +67,9 @@ int main(){
         case SHIELDFRIEND :
             ShieldFriend(cfd_class, command);
             break;
+        case DELETEFRIEND :
+            DeleteFriend(cfd_class, command);
+            break;
         }
     }
 }

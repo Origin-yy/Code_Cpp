@@ -15,7 +15,7 @@ using namespace std;
 #define FRIENDMSG       7
 #define EXITCHAT        8
 #define SHIELDFRIEND    9
-
+#define DELETEFRIEND   10
 
 string get_login();
 string get_uid();
@@ -164,9 +164,14 @@ Command get_command(string my_uid){
             return command;
         }
 
-        else if(input.find("shield-friend-" == 0) && input.size() > 14){
+        else if(input.find("shield-friend-") == 0 && input.size() > 14){
             string option0(input.begin() + 14, input.end());
             Command command(my_uid, SHIELDFRIEND, {option0});
+            return command;
+        }
+        else if(input.find("delete-friend-") == 0 && input.size() > 14){
+            string option0(input.begin() + 14, input.end());
+            Command command(my_uid, DELETEFRIEND, {option0});
             return command;
         }
 
