@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "Display.hpp"
 #include <cstddef>
 #include <pthread.h>
 
@@ -22,7 +23,7 @@ int main(){
 
     bool isok = false;
     while (!isok){
-        display_login1();
+        display_login();
         begin = get_login();
         if(begin == "login"){
             my_uid = Login(cfd_class);
@@ -30,6 +31,7 @@ int main(){
                 exit(0);
             }else if(my_uid != "false"){
                 isok = true;
+                display_menu1();
             }
         } else if(begin == "register"){
             Register(cfd_class);

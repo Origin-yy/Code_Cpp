@@ -51,15 +51,18 @@ int main(){
                 temp.events = EPOLLIN;
                 epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class->getfd(),&temp);
                 redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), "-1");
+                cout << "客户端套接字连接成功，套接字为：" << ep[i].data.fd << endl;
             }
             // 如果是客户端的符，就接收消息，并处理
             else {
                 TcpSocket cfd_class(ep[i].data.fd);   // 用这个符创一个类来交互信息
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
+                cout << "接收到的命令字符串为：" << command_string << endl;
 
                 // 如果客户端挂了，socket类里关fd，并修改用户信息，摘符
                 if(command_string == "close" || command_string == "-1" || command_string == "quit"){    
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
+                    cout << "退出的客户端的uid为：" << cuid << endl;
                     if(cuid.size() == 4){
                         cout << "cuid : " << cuid << endl;
                         redis.hsetValue(cuid, "在线状态", "-1");
@@ -74,7 +77,7 @@ int main(){
                 // 命令类将sring格式的字符串转为josn格式的字符串
                 Command command;
                 command.From_Json(command_string);
-                // 如果是通知套接字来消息，说明是告诉服务器该通知套接字属于那个账号，更改这个账号的通知套接字并加在fd-uid对应表里，不运行任务函数
+                // 如果是通知套接字来消息，说明是告诉服务器该通知套接字属于哪个账号，更改这个账号的通知套接字并加在fd-uid对应表里，不运行任务函数
                 if(command.m_flag == SETRECVFD){
                     redis.hsetValue(command.m_uid, "通知套接字", to_string(ep[i].data.fd));
                     redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command.m_uid + "(通)");

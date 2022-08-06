@@ -1,29 +1,28 @@
+#ifndef GISPLAY_HPP
+#define GISPLAY_HPP
 #include <iostream>
+#include "../lib/Color.hpp"
 
 using namespace std;
 
-
 // 展示界面的函数
-void display_login1(){
-    cout << "Welcome to the chat room" << endl
-         << "Please select" << endl
-         << "login/register/quit" << endl;
+void display_login(){
+    cout << L_YELLOW << "***************聊天室***************" << NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------登录(login)-----------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------注册(register)--------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------退出(quit)------------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW << "**************chatroom**************" << NONE << endl;
 }
-void display_menu(){
-    cout << "                  聊天室                  " << endl;
-    cout << "-----------------------------------------" << endl;
-    cout << "                1.私聊                    " << endl;
-    cout << "                2.群聊                    " << endl;
-    cout << "                2.查看好友申请             " << endl;
-    cout << "                3.加好友                  " << endl;
-    cout << "                4.查看历史聊天记录          " << endl;
-    cout << "                5.查询好友信息             " << endl;
-    cout << "                6.查看好友列               " << endl;
-    cout << "                7.删除好友                 " << endl;
-    cout << "                8.刷新                    " << endl;
-    cout << "                9.注销账号                 " << endl;
-    cout << "                10.群聊                   " << endl;
-    cout << "                11.拉入黑名单              " << endl;
-    cout << "                12.拉出黑名单              "<< endl;
-    cout << "------------------------------------------" << endl;
+void display_menu1(){
+    cout << L_YELLOW << "***************聊天室***************" << NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------聊天(chat-)-----------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------展示列表(list-)-------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------添加好友/群聊(add-)---" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------屏蔽好友(shield-)-----" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------删除好友(delete-)-----" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------同意申请(add-)--------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------帮助(help)------------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW << "**************chatroom**************" << NONE << endl;
 }
+
+#endif

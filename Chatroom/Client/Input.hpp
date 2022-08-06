@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "../lib/Command.hpp"
+#include "../lib/Color.hpp"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ Command get_command(string my_uid);
 // 获得登录选项
 string get_login(){
     string command;
+    cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
     getline(cin,command);
     if(cin.eof()){
         cout << "读到EOF" << endl;
@@ -97,7 +99,7 @@ string get_pwd(){
 
 Command get_command(string my_uid){
     string input;
-    cout << "请输入您想进行的操作" << endl;
+    cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
     cin.sync();
     getline(cin, input);
     //  循环判断输入是否合法，不合法要求再次输入并判断

@@ -31,13 +31,7 @@ int TcpSocket::connectToHost(string ip, unsigned short port){
         perror("connect");
         return -1;
     }
-    ret = connect(recv_fd, (struct sockaddr*)&saddr, sizeof(saddr));
-    if (ret == -1){
-        perror("connect");
-        return -1;
-    }
     
-    // cout << "交互套接字和通知套接字成功和服务器建立连接..." << endl;
     return ret;
 }
 

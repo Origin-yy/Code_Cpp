@@ -41,6 +41,7 @@ void my_error(const char* errorMsg){
 void *recvfunc(void* arg){
     RecvArg *recv_arg = static_cast<RecvArg*>(arg);
     TcpSocket recv_class(recv_arg->recv_fd);
+    recv_class.connectToHost("127.0.0.1", 6666);
     Command command(recv_arg->myuid, SETRECVFD, {"空"});
     int ret = recv_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
