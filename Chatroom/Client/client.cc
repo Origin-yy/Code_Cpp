@@ -31,7 +31,8 @@ int main(){
                 exit(0);
             }else if(my_uid != "false"){
                 isok = true;
-                display_menu1();
+                system("clear");
+                cout << "登录成功" << endl;
             }
         } else if(begin == "register"){
             Register(cfd_class);
@@ -72,6 +73,9 @@ int main(){
             break;
         case DELETEFRIEND :
             DeleteFriend(cfd_class, command);
+            break;
+        case CANCELSHIELD :
+            cancelShield(cfd_class, command);
             break;
         }
     }

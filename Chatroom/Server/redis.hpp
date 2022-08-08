@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+
 using namespace std;
 
 class Redis{
@@ -208,7 +209,11 @@ int Redis::sismember(const string &key, const string &value) //查看数据是�
         cerr << "redis:" << cmd << "失败" << endl;
         return -1;
     }else{
-        return reply->integer;
+        if(reply->integer == 0){
+            return false;
+        }else{
+            return true;
+        }
     };
 }
 int Redis::sremvalue(const string &key, const string &value) //将数据从set中移出

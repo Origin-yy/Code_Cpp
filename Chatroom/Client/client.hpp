@@ -23,6 +23,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command);
 bool ExitChatFriend(TcpSocket cfd_class, Command command);
 bool ShieldFriend(TcpSocket cfd_class, Command command);
 bool DeleteFriend(TcpSocket cfd_class, Command command);
+bool cancelShield(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -108,7 +109,7 @@ string Login(TcpSocket cfd_class){
             my_error("pthread_detach()");
             exit(0);
         }
-        cout << "登录成功" << endl;
+         // cout << "登录成功" << endl;
         return input_uid;
     }else
         return "false";
@@ -192,17 +193,17 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
-        cout << "已通过" << command.m_option[0] << "的好友申请" << endl;
+        cout << UP << "已通过" << command.m_option[0] << "的好友申请" << endl;
         return true;
     }else if(check == "had"){
-        cout << "该用户已经是您的好友" << endl;
+        cout << UP  << "该用户已经是您的好友" << endl;
         return false;
     }else if(check == "nofind"){
-        cout << "未找到该用户的好友申请." << endl;
+        cout << UP  << "未找到该用户的好友申请." << endl;
         return false;
     }
     else{
-        cout << "其他错误" << endl;
+        cout << UP  << "其他错误" << endl;
         return false;
     }
 }
@@ -239,7 +240,10 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
     }            
     string check = cfd_class.recvMsg();        // 检查回复
     if(check == "nofind"){
-        cout << "未找到该好友" << endl;
+        cout << "未找到该好友." << endl;
+        return false;
+    }else if(check == "nohave"){
+        cout << "您已被对方删除." << endl;
         return false;
     }
     // 有这个好友就打印历史聊天记录
@@ -259,7 +263,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         // 给好友发送消息,^[ (ESC） 退出聊天，并更改自己的聊天对象
         string msg;
         while(true){
-            cout << "我："; 
+            //cout << "请输入您想发送的消息：" << endl; 
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
             if(msg == "#"){
@@ -268,7 +272,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 break;
             }
             // 把消息包装好，让服务器转发
-            Command command_msg(command.m_uid, FRIENDMSG, {command.m_option[0],msg});
+            Command command_msg(command.m_uid, FRIENDMSG, {command.m_option[0], msg});
             int ret = cfd_class.sendMsg(command_msg.To_Json());
             if(ret == 0 || ret == -1){
                 cout << "服务器已关闭." << endl; 

@@ -1,15 +1,17 @@
-#include "server.hpp"
-#include <hiredis/hiredis.h>
-#include <string>
+#include "ThreadPool.hpp"
+#include "ThreadPool.cc"
+#include "Option.hpp"
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+#include <netinet/in.h>
 #include <sys/epoll.h>
-
-
-void my_error(const char* errorMsg);  //错误函数
-void taskfunc(void * arg);            //处理一条命令的任务函数
-
-using namespace std;
+#include <bits/types/time_t.h>
 
 Redis redis;
+using namespace std;
 
 int main(){
     // 连接redis服务端
@@ -60,7 +62,10 @@ int main(){
                 cout << "接收到的命令字符串为：" << command_string << endl;
 
                 // 如果客户端挂了，socket类里关fd，并修改用户信息，摘符
-                if(command_string == "close" || command_string == "-1" || command_string == "quit"){    
+                if(command_string == "close" || command_string == "-1" || command_string == "quit"){
+                    if(!redis.hashexists("fd-uid对应表", to_string(ep[i].data.fd))){
+                        break;
+                    }    
                     string cuid = redis.gethash("fd-uid对应表", to_string(ep[i].data.fd));
                     cout << "退出的客户端的uid为：" << cuid << endl;
                     if(cuid.size() == 4){

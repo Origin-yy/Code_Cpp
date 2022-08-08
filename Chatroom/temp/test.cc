@@ -1,28 +1,25 @@
 #include <nlohmann/json.hpp>
 #include <iostream>
+#include <ostream>
 using namespace std;
 using json = nlohmann::json;
 
 int main(){
-    // string test1;
-    // cin >> test;
-    // if(cin.eof()){
-    //     cout << "jixu1" <<endl;
-    //     cin.clear();
-    //     cin.setstate(std::_S_goodbit);
-    //     cin.sync(); 
-    //     cout << "jixu2" <<endl;
-    //     cin >> test1;
-    //     cout << "jixu3" <<endl;
-    // }
-    string asdf = "add";
-    if(asdf.find("add-friend") == 0){
-        cout << "ok" << endl;
-    }else{cout << "k" << endl;}
+    string test = "a d d fd ;";
+    json jn = test;
+    string test1 = jn.dump();
+    json test2 = test2.parse(test1);
 
+    string test3;
+    jn.get_to(test3);
 
+    string test4 = jn.get<string>();
 
-
-
+    cout << "test: " << test << endl
+         << "jn(json): "  << jn << endl
+         << "(jn.dump)test1(string): " << test1 << endl
+         << "(test1的parse)test2(json): " << test2 << endl
+         << "(jn.get_to)test3(string): " << test3 << endl
+         << "(jn.get<>:)test4(string): " << test4 << endl;
     return 0;
 }

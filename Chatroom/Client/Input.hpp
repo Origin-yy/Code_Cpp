@@ -17,6 +17,7 @@ using namespace std;
 #define EXITCHAT        8
 #define SHIELDFRIEND    9
 #define DELETEFRIEND   10
+#define RESTOREFRIEND  11
 
 string get_login();
 string get_uid();
@@ -176,6 +177,7 @@ Command get_command(string my_uid){
             Command command(my_uid, DELETEFRIEND, {option0});
             return command;
         }
+        else if(input.find("restore-"))
 
 
 
