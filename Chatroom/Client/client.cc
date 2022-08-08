@@ -74,8 +74,11 @@ int main(){
         case DELETEFRIEND :
             DeleteFriend(cfd_class, command);
             break;
-        case CANCELSHIELD :
-            cancelShield(cfd_class, command);
+        case RESTOREFRIEND :
+            Restorefriend(cfd_class, command);
+            break;
+        case NEWMESSAGE :
+            NewList(cfd_class, command);
             break;
         }
     }

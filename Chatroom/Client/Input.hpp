@@ -17,7 +17,8 @@ using namespace std;
 #define EXITCHAT        8
 #define SHIELDFRIEND    9
 #define DELETEFRIEND   10
-#define RESTOREFRIEND  11
+#define RESTOREFRIEND  11 
+#define NEWMESSAGE        12
 
 string get_login();
 string get_uid();
@@ -149,8 +150,8 @@ Command get_command(string my_uid){
             return command;
         }
         // 展示好友列表命令是否合法
-        else if(input == "list-friend"){ 
-            string option0 = "list-friend";
+        else if(input == "list-f"){ 
+            string option0 = "list-f";
             Command command(my_uid, LISTFRIEND, {option0});
             return command;
         }
@@ -177,7 +178,16 @@ Command get_command(string my_uid){
             Command command(my_uid, DELETEFRIEND, {option0});
             return command;
         }
-        else if(input.find("restore-"))
+        else if(input.find("restore-") == 0 && input.size() > 8){
+            string option0(input.begin() + 8, input.end());
+            Command command(my_uid, DELETEFRIEND, {option0});
+            return command;
+        }
+        else if(input.find("new") == 0 && input.size() == 3){
+            string option0 = input;
+            Command command(my_uid, DELETEFRIEND, {option0});
+            return command;
+        }
 
 
 

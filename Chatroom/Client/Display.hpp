@@ -17,9 +17,10 @@ void display_menu1(){
     cout << L_YELLOW << "***************聊天室***************" << NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------消息列表(msg)---------" << NONE << L_YELLOW "*" NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------聊天(chat-)-----------" << NONE << L_YELLOW "*" NONE << endl
-         << L_YELLOW "*" << NONE << L_BLUE << "------------展示列表(list-)-------" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------联系人(list-)---------" << NONE << L_YELLOW "*" NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------添加好友/群聊(add-)---" << NONE << L_YELLOW "*" NONE << endl
-         << L_YELLOW "*" << NONE << L_BLUE << "------------屏蔽好友(shield-)-----" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------屏蔽会话(shield-)-----" << NONE << L_YELLOW "*" NONE << endl
+         << L_YELLOW "*" << NONE << L_BLUE << "------------恢复会话(restore-)----" << NONE << L_YELLOW "*" NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------删除好友(delete-)-----" << NONE << L_YELLOW "*" NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------同意申请(add-)--------" << NONE << L_YELLOW "*" NONE << endl
          << L_YELLOW "*" << NONE << L_BLUE << "------------帮助(help)------------" << NONE << L_YELLOW "*" NONE << endl

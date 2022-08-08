@@ -23,7 +23,8 @@ bool ChatFriend(TcpSocket cfd_class, Command command);
 bool ExitChatFriend(TcpSocket cfd_class, Command command);
 bool ShieldFriend(TcpSocket cfd_class, Command command);
 bool DeleteFriend(TcpSocket cfd_class, Command command);
-bool cancelShield(TcpSocket cfd_class, Command command);
+bool Restorefriend(TcpSocket cfd_class, Command command);
+bool NewList(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -220,9 +221,9 @@ bool ListFriend(TcpSocket cfd_class, Command command){
             cout << "好友展示完毕" << endl;
             break;
         }else if(Friend == "none"){
-            cout << "您当前还还没有好友" << endl;
+            cout << "您当前还没有好友" << endl;
             break;
-        }else if(Friend == "clos"){
+        }else if(Friend == "close"){
             cout << "服务器已关闭." << endl;
             exit (0);
         }else {
@@ -318,7 +319,7 @@ bool ShieldFriend(TcpSocket cfd_class, Command command){
         cout << "未找到该好友." << endl;
         return false;
     }else if(check == "ok"){
-        cout << "已屏蔽该好友." << endl;
+        cout << "已屏蔽该好友的会话." << endl;
         return true;
     }else{
         cout << "该好友已被屏蔽." << endl;
@@ -344,4 +345,51 @@ bool DeleteFriend(TcpSocket cfd_class, Command command){
         return true;
     }
     return false;
+}
+bool Restorefriend(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit(0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "nohave"){
+        cout << "未找到该好友." << endl;
+        return false;
+    }else if(check == "nofind"){
+        cout << "该好友未被屏蔽." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "已恢复该好友的会话." << endl;
+        return true;
+    }else{
+        cout << "该好友已被屏蔽." << endl;
+    }
+    return false;
+}
+bool NewList(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string Friend = cfd_class.recvMsg();
+        if(Friend == "end"){
+            cout << "未读消息展示完毕" << endl;
+            break;
+        }else if(Friend == "none"){
+            cout << "您当前没有未读消息" << endl;
+            break;
+        }else if(Friend == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << Friend << endl;
+        }
+    }
+    return true;
 }
