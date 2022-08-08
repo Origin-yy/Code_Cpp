@@ -157,19 +157,24 @@ void taskfunc(void *arg){
         case AGREEADDFRIEND:{
             // 看看自己的好友列表里是否已有该好友，没有就可以同意申请，有就不可以同意申请，回复had
             if( redis.gethash(command.m_uid, "好友数量") == "0" || !redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
-
+                // 系统消息列表里又没有他的申请
+                if(!redis.hashexists(command.m_uid + "--系统", command.m_option[0])){
+                    cfd_class.sendMsg("nofind");
+                    break;
+                }
+                // 同意者的信息完善
                 string friend_mark0  = redis.gethash(command.m_option[0], "昵称");                         // 获得申请者的昵称作为默认备注
                 redis.hsetValue(command.m_uid + "的好友列表", command.m_option[0], friend_mark0);    // 在同意者好友列表里插入申请者的uid和默认备注
                 string friendNum0 = redis.gethash(command.m_uid, "好友数量");                              // 获得同意者当前的好友数量
                 redis.hsetValue(command.m_uid, "好友数量", to_string(stoi(friendNum0)+1));  // 同意者的好友数量+1
-                redis.lpush(command.m_uid + "--" + command.m_option[0], "*********************");         // 为同意者建一个聊天会话，
-
+                redis.lpush(command.m_uid + "--" + command.m_option[0], "*********************");         // 为同意者建一个聊天会话
+                // 申请者的信息完善
                 string friend_mark1 = redis.gethash(command.m_uid, "昵称");                                    // 获得同意者的昵称
                 redis.hsetValue(command.m_option[0] + "的好友列表", command.m_uid, friend_mark1);        // 在申请者的好友列表里插入申请者的uid和默认备注
                 string friendNum1 = redis.gethash(command.m_option[0], "好友数量");                            // 获得申请者当前的好友数量
                 redis.hsetValue(command.m_option[0], "好友数量", to_string(stoi(friendNum1)+1));// 申请者的好友数量+1
-                redis.lpush(command.m_option[0] + "--" + command.m_uid, "*********************");             // 为申请者建一个聊天会话，end结尾
-                
+                redis.lpush(command.m_option[0] + "--" + command.m_uid, "*********************");             // 为申请者建一个聊天会话
+                // 结果处理，通知双方
                 redis.hsetValue(command.m_option[0] + "--系统", command.m_uid, command.m_uid + "通过了您的好友申请." + GetNowTime());// 在申请者的系统消息里写入通过消息
                 redis.delhash(command.m_uid + "--系统", command.m_option[0]);        // 在同意者的系统消息这边删除申请者的申请
 

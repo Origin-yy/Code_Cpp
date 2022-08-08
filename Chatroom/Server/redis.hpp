@@ -126,7 +126,11 @@ bool Redis::hashexists(const string &key, const string &field){
         cerr << "redis:" << cmd << "失败" << endl;
         return false;
     }else{
-        return true;
+        if(reply->integer == 0){
+            return false;
+        }else{
+            return true;
+        }
     };
 }
 // 获取对应的hash_value

@@ -188,7 +188,6 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         exit (0);
     }
     string check = cfd_class.recvMsg();
-cout << check << endl;
     if(check == "close"){
         cout << "服务器已关闭." << endl;
         exit (0);
@@ -198,8 +197,12 @@ cout << check << endl;
     }else if(check == "had"){
         cout << "该用户已经是您的好友" << endl;
         return false;
-    }else{
+    }else if(check == "nofind"){
         cout << "未找到该用户的好友申请." << endl;
+        return false;
+    }
+    else{
+        cout << "其他错误" << endl;
         return false;
     }
 }

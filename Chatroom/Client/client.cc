@@ -42,6 +42,7 @@ int main(){
         }
     }
     while(true){
+        display_menu1();
         command = get_command(my_uid);
         switch (command.m_flag) {
         case QUIT :

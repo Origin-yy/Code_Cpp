@@ -105,19 +105,19 @@ Command get_command(string my_uid){
     //  循环判断输入是否合法，不合法要求再次输入并判断
     while(true){
         // 添加好友命令是否合法
-        if(input.find("add-friend-") == 0 && input.size() >= 15){
-            string option0(input.begin()+11, input.begin()+15);
+        if(input.find("add-") == 0 && input.size() >= 8){
+            string option0(input.begin()+4, input.begin()+8);
             if(option0 == my_uid){
                 cout << "不允许添加自己" << endl;
                 cout << "请输入您想进行的操作:" << endl;
                 cin.sync();
                 getline(cin, input);
                 continue;
-            }else if(input.size() > 16 && input[15] == '-'){
-                string option1(input.begin()+16, input.end()); 
+            }else if(input.size() > 9 && input[8] == '-'){
+                string option1(input.begin()+8, input.end()); 
                 Command command(my_uid, ADDFRIEND, {option0, option1});
                 return command;
-            }else if(input.size() > 115){
+            }else if(input.size() > 109){
                 cout << "验证消息最多100个字节" << endl;
                 cout << "请输入您想进行的操作:" << endl;
                 cin.sync();
@@ -142,13 +142,13 @@ Command get_command(string my_uid){
         //     }
         // }
         // 同意好友申请命令是否合法
-        else if(input.find("agree-friend-") == 0 && input.size() >=17){
-            string option0(input.begin()+13,input.end());
+        else if(input.find("agree-") == 0 && input.size() ==10){
+            string option0(input.begin() + 6,input.end());
             Command command(my_uid, AGREEADDFRIEND, {option0});
             return command;
         }
         // 展示好友列表命令是否合法
-        else if(input == "list-friend"){
+        else if(input == "list-friend"){ 
             string option0 = "list-friend";
             Command command(my_uid, LISTFRIEND, {option0});
             return command;
@@ -160,19 +160,19 @@ Command get_command(string my_uid){
         //     return command;
         // }
         // 
-        else if(input.find("chat-friend-") == 0 && input.size() > 12){
-            string option0(input.begin() + 12, input.end());
+        else if(input.find("chat-") == 0 && input.size() > 5){
+            string option0(input.begin() + 5, input.end());
             Command command(my_uid, CHATFRIEND, {option0});
             return command;
         }
 
-        else if(input.find("shield-friend-") == 0 && input.size() > 14){
-            string option0(input.begin() + 14, input.end());
+        else if(input.find("shield-") == 0 && input.size() > 7){
+            string option0(input.begin() + 7, input.end());
             Command command(my_uid, SHIELDFRIEND, {option0});
             return command;
         }
-        else if(input.find("delete-friend-") == 0 && input.size() > 14){
-            string option0(input.begin() + 14, input.end());
+        else if(input.find("delete-") == 0 && input.size() > 7){
+            string option0(input.begin() + 7, input.end());
             Command command(my_uid, DELETEFRIEND, {option0});
             return command;
         }
