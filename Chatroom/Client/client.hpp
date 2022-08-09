@@ -154,6 +154,9 @@ bool AddFriend(TcpSocket cfd_class, Command command){
     }else if(check == "had"){
         cout << "该用户已经是您的好友" << endl;
         return false;
+    }else if(check == "cannot"){
+        cout << "系统消息中还有该用户未处理的申请,请先处理." << endl;
+        return false;
     }else{
         cout << "未找到该用户." << endl;
         return false;
