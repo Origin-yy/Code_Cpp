@@ -18,7 +18,8 @@ using namespace std;
 #define SHIELDFRIEND    9
 #define DELETEFRIEND   10
 #define RESTOREFRIEND  11 
-#define NEWMESSAGE        12
+#define NEWMESSAGE     12
+#define LOOKSYSTEMMSG  13
 
 string get_login();
 string get_uid();
@@ -180,12 +181,17 @@ Command get_command(string my_uid){
         }
         else if(input.find("restore-") == 0 && input.size() > 8){
             string option0(input.begin() + 8, input.end());
-            Command command(my_uid, DELETEFRIEND, {option0});
+            Command command(my_uid, RESTOREFRIEND, {option0});
             return command;
         }
         else if(input.find("new") == 0 && input.size() == 3){
             string option0 = input;
-            Command command(my_uid, DELETEFRIEND, {option0});
+            Command command(my_uid, NEWMESSAGE, {option0});
+            return command;
+        }
+        else if(input.find("system") == 0 && input.size() == 6){
+            string option0 = input;
+            Command command(my_uid, LOOKSYSTEMMSG, {option0});
             return command;
         }
 

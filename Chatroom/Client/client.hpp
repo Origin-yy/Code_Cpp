@@ -25,20 +25,19 @@ bool ShieldFriend(TcpSocket cfd_class, Command command);
 bool DeleteFriend(TcpSocket cfd_class, Command command);
 bool Restorefriend(TcpSocket cfd_class, Command command);
 bool NewList(TcpSocket cfd_class, Command command);
+bool LookSystemMsg(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
     int recv_fd = -1;
     RecvArg(string Myuid, int Recv_uid) : myuid(Myuid),recv_fd(Recv_uid) {} 
 };
-
 // 错误函数
 void my_error(const char* errorMsg){
     cout << errorMsg << endl;
     strerror(errno);
     exit(1);
 }
-
 // 接收通知的线程任务函数
 void *recvfunc(void* arg){
     RecvArg *recv_arg = static_cast<RecvArg*>(arg);
@@ -62,13 +61,11 @@ void *recvfunc(void* arg){
     }
     return nullptr;
 }
-
 // 信息交互函数（发送命令并收到回复）
 // 登录函数
 void Quit(TcpSocket cfd_class){
     cfd_class.sendMsg("quit");
 }
-
 // 登录函数
 string Login(TcpSocket cfd_class){
     string input_uid;
@@ -141,7 +138,6 @@ bool Register(TcpSocket cfd_class){
     cout << "您注册的uid为: " << new_uid << endl << "忘记后无法找回，请牢记." << endl;
     return true;
 }
-
 bool AddFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -163,7 +159,6 @@ bool AddFriend(TcpSocket cfd_class, Command command){
         return false;
     }
 }
-
 bool AddGroup(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -182,7 +177,6 @@ bool AddGroup(TcpSocket cfd_class, Command command){
         return false;
     }
 }
-
 bool AgreeAddFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -208,7 +202,6 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         return false;
     }
 }
-
 bool ListFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -232,7 +225,6 @@ bool ListFriend(TcpSocket cfd_class, Command command){
     }
     return true;
 }
-
 bool ChatFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());  // 发送聊天请求
     if(ret == 0 || ret == -1){
@@ -283,7 +275,6 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
     }
     return true;
 }
-
 bool ExitChatFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());  // 发送退出聊天请求
     if(ret == 0 || ret == -1){
@@ -304,7 +295,6 @@ bool ExitChatFriend(TcpSocket cfd_class, Command command){
     }
     return false;
 }
-
 bool ShieldFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -326,7 +316,6 @@ bool ShieldFriend(TcpSocket cfd_class, Command command){
     }
     return false;
 }
-
 bool DeleteFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -389,6 +378,29 @@ bool NewList(TcpSocket cfd_class, Command command){
             exit (0);
         }else {
             cout << Friend << endl;
+        }
+    }
+    return true;
+}
+bool LookSystemMsg(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string SysMsg = cfd_class.recvMsg();
+        if(SysMsg == "end"){
+            cout << "以上为系统消息" << endl;
+            break;
+        }else if(SysMsg == "none"){
+            cout << "系统消息为空" << endl;
+            break;
+        }else if(SysMsg == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << SysMsg << endl;
         }
     }
     return true;

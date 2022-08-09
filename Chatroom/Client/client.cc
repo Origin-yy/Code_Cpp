@@ -80,6 +80,9 @@ int main(){
         case NEWMESSAGE :
             NewList(cfd_class, command);
             break;
+        case LOOKSYSTEMMSG :
+            LookSystemMsg(cfd_class, command);
+            break;
         }
     }
 }
