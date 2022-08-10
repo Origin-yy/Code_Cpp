@@ -28,19 +28,19 @@ bool NewList(TcpSocket cfd_class, Command command);
 bool LookSystemMsg(TcpSocket cfd_class, Command command);
 bool RefuseAddFriend(TcpSocket cfd_class, Command command);
 bool CreateGroup(TcpSocket cfd_class, Command command);
+bool ListGroup(TcpSocket cfd_class, Command command);
+bool LookGroupApply(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
     int recv_fd = -1;
     RecvArg(string Myuid, int Recv_uid) : myuid(Myuid),recv_fd(Recv_uid) {} 
 };
-// 错误函数
 void my_error(const char* errorMsg){
     cout << errorMsg << endl;
     strerror(errno);
     exit(1);
 }
-// 接收通知的线程任务函数
 void *recvfunc(void* arg){
     RecvArg *recv_arg = static_cast<RecvArg*>(arg);
     TcpSocket recv_class(recv_arg->recv_fd);
@@ -63,12 +63,9 @@ void *recvfunc(void* arg){
     }
     return nullptr;
 }
-// 信息交互函数（发送命令并收到回复）
-// 登录函数
 void Quit(TcpSocket cfd_class){
     cfd_class.sendMsg("quit");
 }
-// 登录函数
 string Login(TcpSocket cfd_class){
     string input_uid;
     string pwd;
@@ -114,7 +111,6 @@ string Login(TcpSocket cfd_class){
     }else
         return "false";
 }
-// 注册函数
 bool Register(TcpSocket cfd_class){
     string pwd;
     while(true){
@@ -177,6 +173,12 @@ bool AddGroup(TcpSocket cfd_class, Command command){
     }else if(check == "ok"){
         cout << "群聊添加申请已发送,等待通过." << endl;
         return true;
+    }else if(check == "had"){
+        cout << "您已在该群聊中" << endl;
+        return false;
+    }else if(check == "cannot"){
+        cout << "该群聊的申请列表中已有您的未处理的申请,请先处理." << endl;
+        return false;
     }else{
         cout << "未找到该群聊." << endl;
         return false;
@@ -468,7 +470,56 @@ bool CreateGroup(TcpSocket cfd_class, Command command){
         cout << "请检查好友uid或输入格式是否正确." << endl;
         return false;
     }else{
-        cout << "群聊创建成功,您的群号为：" << check << endl;
+        cout << "群聊创建成功,群号为：" << check << endl;
         return true;
     }
+}
+bool ListGroup(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string Group = cfd_class.recvMsg();
+        if(Group == "end"){
+            cout << "群聊展示完毕" << endl;
+            break;
+        }else if(Group == "none"){
+            cout << "您当前还没有加入群聊" << endl;
+            return false;
+        }else if(Group == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << Group << endl;
+        }
+    }
+    return true;
+}
+bool LookGroupApply(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string apply = cfd_class.recvMsg();
+        if(apply == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else if(apply == "none"){
+            cout << "当前还没有入群申请" << endl;
+            return false;
+        }else if(apply == "cannot"){
+            cout << "您在" << endl;
+            return false;
+        }else if(apply == "end"){
+            cout << "入群申请展示完毕." << endl;
+            exit (0);
+        }else {
+            cout << apply << endl;
+        }
+    }
+    return true;
 }

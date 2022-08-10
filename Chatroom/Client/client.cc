@@ -53,9 +53,9 @@ int main(){
         case ADDFRIEND :
             AddFriend(cfd_class, command);
             break;
-        // case ADDGROUP :
-        //     AddGroup(cfd_class, command);
-        //     break;
+        case ADDGROUP :
+            AddGroup(cfd_class, command);
+            break;
         case AGREEADDFRIEND :
             AgreeAddFriend(cfd_class, command);
             break;
@@ -88,6 +88,12 @@ int main(){
             break;
         case CREATEGROUP :
             CreateGroup(cfd_class, command);
+            break;
+        case LISTGROUP :
+            ListGroup(cfd_class, command);
+            break;
+        case LOOKGROUPAPPLY :
+            LookGroupApply(cfd_class, command);
             break;
         }
     }

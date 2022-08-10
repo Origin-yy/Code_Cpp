@@ -18,11 +18,15 @@ using namespace std;
 #define EXITCHAT         8
 #define SHIELDFRIEND     9
 #define DELETEFRIEND    10
-#define RESTOREFRIEND   11 
+#define RESTOREFRIEND   11
 #define NEWMESSAGE      12
 #define LOOKSYSTEMMSG   13
 #define REFUSEADDFRIEND 14
-#define CREATEGROUP      15
+#define CREATEGROUP     15
+#define LISTGROUP       16
+#define ADDGROUP        17
+#define ADD             18
+#define LOOKGROUPAPPLY  19
 
 string get_login();
 string get_uid();
@@ -103,66 +107,84 @@ Command get_command(string my_uid){
     getline(cin, input);
     //  循环判断输入是否合法，不合法要求再次输入并判断
     while(true){
-        // 添加好友命令是否合法
-        if(input.find("add-") == 0 && input.size() >= 8){
-            string option0(input.begin()+4, input.begin()+8);
+        // 是添加好友/群聊的命令
+        if(input.find("add-") == 0 && input.size() >= 7){
+            // 命令长度为7的话，就是没有验证的加群
+            if(input.size() == 7){
+                string option0(input.begin() + 4, input.begin() + 7);
+                string option1("无"); 
+                Command command(my_uid, ADDGROUP, {option0, option1});
+                return command;
+            }
+            // 7位置上为‘-’,说明是加群，可能有验证，也可能没验证
+            if(input[7] == '-'){
+                // 长度大于8，说明有验证
+                if(input.size() > 8){
+                    string option0(input.begin() + 4, input.begin() + 7);
+                    string option1(input.begin() + 8, input.end()); 
+                    if(option1.size() > 100){
+                        cout << "验证消息最多100个字节" << endl;
+                        cout << "请输入您想进行的操作:" << endl;
+                        cin.sync();
+                        getline(cin, input);
+                        continue;
+                    }
+                    Command command(my_uid, ADDGROUP, {option0, option1});
+                    return command;
+                }// 长度大于7但不小于8，说明长度等于8，其7上为‘-’,带了‘-’但无验证
+                else{ 
+                    string option0(input.begin() + 4, input.begin() + 7);
+                    Command command(my_uid, ADDGROUP, {option0, "无"});
+                    return command;
+                }
+            }
+            // 排除以上情况，说明是加好友
+            string option0(input.begin() + 4, input.begin() + 8);  // 存下要添加的账号
             if(option0 == my_uid){
                 cout << "不允许添加自己" << endl;
                 cout << "请输入您想进行的操作:" << endl;
                 cin.sync();
                 getline(cin, input);
                 continue;
-            }else if(input.size() > 9 && input[8] == '-'){
-                string option1(input.begin()+8, input.end()); 
+            }
+            // 有验证消息
+            if(input.size() > 9 && input[8] == '-'){
+                string option1(input.begin() + 9, input.end()); 
+                if(option1.size() > 100){
+                    cout << "验证消息最多100个字节" << endl;
+                    cout << "请输入您想进行的操作:" << endl;
+                    cin.sync();
+                    getline(cin, input);
+                    continue;
+                }
                 Command command(my_uid, ADDFRIEND, {option0, option1});
                 return command;
-            }else if(input.size() > 109){
-                cout << "验证消息最多100个字节" << endl;
-                cout << "请输入您想进行的操作:" << endl;
-                cin.sync();
-                getline(cin, input);
-                continue;
-            }
+            }// 没有验证消息
             else{
                 Command command(my_uid, ADDFRIEND, {option0, "无"});
                 return command;
             }
         }
-        // // 添加群聊命令是否合法
-        // else if(input.find("add-group-") == 0 && input.size() >= 14){
-        //     string option0(input.begin()+10, input.begin()+14);
-        //     if(input.size() > 14 && input[13] == '-'){
-        //         string option1(input.begin()+14, input.end()); 
-        //         Command command(my_uid, ADDGROUP, {option0, option1});
-        //         return command;
-        //     }else{
-        //         Command command(my_uid, ADDGROUP, {option0, "无"});
-        //         return command;
-        //     }
-        // }
         else if(input.find("agree-") == 0 && input.size() ==10){
             string option0(input.begin() + 6,input.end());
             Command command(my_uid, AGREEADDFRIEND, {option0});
             return command;
         }
-        // 展示好友列表命令是否合法
         else if(input == "list-f"){ 
             string option0 = "list-f";
             Command command(my_uid, LISTFRIEND, {option0});
             return command;
         }
-        // // 展示群组列表命令是否合法
-        // else if(input == "list-group"){
-        //     string option0 = "list-group";
-        //     Command command(my_uid, LISTGROUP, {option0});
-        //     return command;
-        // }
+        else if(input == "list-g"){
+            string option0 = "list-g";
+            Command command(my_uid, LISTGROUP, {option0});
+            return command;
+        }
         else if(input.find("chat-") == 0 && input.size() > 5){
             string option0(input.begin() + 5, input.end());
             Command command(my_uid, CHATFRIEND, {option0});
             return command;
         }
-
         else if(input.find("shield-") == 0 && input.size() > 7){
             string option0(input.begin() + 7, input.end());
             Command command(my_uid, SHIELDFRIEND, {option0});
@@ -191,15 +213,15 @@ Command get_command(string my_uid){
             string option0(input.begin()+8,input.end());
             Command command(my_uid, REFUSEADDFRIEND, {option0});
             return command;
-        }else if(input.find("create") == 0 && input.size() > 6){
-            string option0(input.begin() + 7,input.end());
+        }else if(input == "create"){
+            string option0 = input;
             Command command(my_uid, CREATEGROUP, {option0});
             return command;
+        }else if(input == "apply-" && input.size() > 6){
+            string option0(input.begin() + 6, input.end());
+            Command command(my_uid, LOOKGROUPAPPLY, {option0});
+            return command;
         }
-
-
-
-
 
         // 退出命令是否合法
         else if(input == "quit"){
