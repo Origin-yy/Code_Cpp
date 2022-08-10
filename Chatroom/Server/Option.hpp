@@ -8,21 +8,23 @@
 #include <hiredis/hiredis.h>
 #include <string>
 
-#define SETRECVFD      -1
-#define QUIT            0
-#define LOGHIN_CHECK    1
-#define REGISTER_CHECK  2
-#define ADDFRIEND       3
-#define AGREEADDFRIEND  4
-#define LISTFRIEND      5
-#define CHATFRIEND      6
-#define FRIENDMSG       7
-#define EXITCHAT        8
-#define SHIELDFRIEND    9
-#define DELETEFRIEND   10
-#define RESTOREFRIEND  11
-#define NEWMESSAGE     12
-#define LOOKSYSTEMMSG  13
+#define SETRECVFD       -1
+#define QUIT             0
+#define LOGHIN_CHECK     1
+#define REGISTER_CHECK   2
+#define ADDFRIEND        3
+#define AGREEADDFRIEND   4
+#define LISTFRIEND       5
+#define CHATFRIEND       6
+#define FRIENDMSG        7
+#define EXITCHAT         8
+#define SHIELDFRIEND     9
+#define DELETEFRIEND    10
+#define RESTOREFRIEND   11 
+#define NEWMESSAGE      12
+#define LOOKSYSTEMMSG   13
+#define REFUSEADDFRIEND 14
+#define CREATGROUP      15
 
 using namespace std;
 extern Redis redis;
@@ -49,6 +51,8 @@ void DeleteFriend(TcpSocket cfd_class, Command command);
 void Restorefriend(TcpSocket cfd_class, Command command);
 void NewList(TcpSocket cfd_class, Command command);
 void LookSystemMsg(TcpSocket cfd_class, Command command);
+void RefuseAddFriend(TcpSocket cfd_class, Command command);
+void CreateGroup(TcpSocket cfd_class, Command command);
 
 void my_error(const char* errorMsg) {
     cout << errorMsg << endl;
@@ -113,6 +117,9 @@ void taskfunc(void *arg){
         case LOOKSYSTEMMSG:
             LookSystemMsg(cfd_class, command);
             break;
+        case REFUSEADDFRIEND:
+            RefuseAddFriend(cfd_class, command);
+            break;
     }
     return;
 }
@@ -140,7 +147,7 @@ void Login(TcpSocket cfd_class, Command command){
 void Register(TcpSocket cfd_class, Command command){
     srand((unsigned)time(NULL));
     while(true){                                                   
-        string new_uid = to_string((rand()+9999)%10000);
+        string new_uid = to_string((rand()+1111)%10000);
         if(redis.sismember("accounts", new_uid)){  // 直到随机一个未注册  uid发过去，并建立账号基本信息
             continue;
         }else if(stoi(new_uid) < 1000){
@@ -155,7 +162,6 @@ void Register(TcpSocket cfd_class, Command command){
             redis.hsetValue(new_uid, "其他信息", "无");
             redis.hsetValue(new_uid, "通知套接字", "-1");
             redis.hsetValue(new_uid, "好友数量", "0");
-            redis.hsetValue(new_uid, "群聊数量", "0");
             redis.hsetValue(new_uid, "屏蔽数量", "0");
             redis.hsetValue(new_uid, "聊天对象", "无");
             redis.hsetValue(new_uid + "的未读消息", "系统消息：", "0");
@@ -326,7 +332,7 @@ void FriendMsg(TcpSocket cfd_class, Command command){
     if(online != "-1" && ChatFriend == command.m_uid){   // 好友在线且和我聊天
         string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
         TcpSocket friendFd_class(stoi(friend_recvfd));
-        friendFd_class.sendMsg(msg1);
+        friendFd_class.sendMsg("\r" + msg1);
     }
     else{// 否则，好友的未读消息中的来自我的消息数量+1
         string name = redis.gethash(command.m_option[0] + "的好友列表", command.m_uid);
@@ -464,5 +470,87 @@ void LookSystemMsg(TcpSocket cfd_class, Command command){
         cfd_class.sendMsg(sysmsg);
     }
     cfd_class.sendMsg("end");
+}
+void RefuseAddFriend(TcpSocket cfd_class, Command command){
+    // 看看自己的好友列表里是否已有该好友，没有就可以修改申请，有就不可以修改申请，回复had
+    if( redis.gethash(command.m_uid, "好友数量") == "0" || !redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
+        // 系统消息列表里有没有他的申请
+        if(!redis.hashexists(command.m_uid + "--系统", command.m_option[0])){
+            cfd_class.sendMsg("nofind");
+            return;
+        }
+        // 更改申请者收到的申请消息状态为已通过
+        string pass = "(已拒绝)";
+        string msg = redis.gethash(command.m_uid + "--系统", command.m_option[0]);
+        string newmsg(msg.begin(), msg.end() - 11);
+        string Newmsg = newmsg + pass;
+        redis.hsetValue(command.m_uid + "--系统", command.m_option[0], Newmsg);
+        
+        // 在申请者的系统消息里写入未通过消息
+        redis.hsetValue(command.m_option[0] + "--系统", "\r" + command.m_uid, command.m_uid + "拒绝了您的好友申请." + GetNowTime());
+        // 申请者未读消息中的系统消息数量+1
+        string num1 = redis.gethash(command.m_option[0] + "的未读消息", "系统消息：");
+        redis.hsetValue(command.m_option[0] + "的未读消息", "系统消息：", to_string(stoi(num1)+1));
+        // 如果申请者在线，给他的通知套接字一个提醒
+        string online = redis.gethash(command.m_option[0], "在线状态");
+        if(online != "-1"){
+            string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+            TcpSocket friendFd_class(stoi(friend_recvfd));
+            string kaitou = UP;
+            friendFd_class.sendMsg(kaitou + "\r" + command.m_uid + "已拒绝了您的好友申请." + GetNowTime());
+        }
+    }else{
+        cfd_class.sendMsg("had");
+        return;
+    }
+    cfd_class.sendMsg("ok");
+    return;
+}
+void CreateGroup(TcpSocket cfd_class, Command command){
+    // 检查发过来的uid是否都是用户的好友，有一个不是就返回并提醒客户端
+    int len = command.m_option[0].size();
+    vector<string> members;
+    for(int i = 0; i < len/5; i++){
+        string member(command.m_option[0].begin() + i*5, command.m_option[0].begin() + i*5 + 4);
+        if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
+            cfd_class.sendMsg("nofind" + member);
+            return;
+        }
+        members.push_back(member);
+    }
+    string last(command.m_option[0].end() - 4, command.m_option[0].end());
+    if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
+        cfd_class.sendMsg("nofind" + last);
+        return;
+    }
+    members.push_back(last);
+    srand((unsigned)time(NULL));
+    while(true){                                                   
+        string new_gid = to_string((rand()+111)%1000);
+        if(redis.sismember("群聊集合", new_gid)){  // 直到随机一个未注册的gid发过去，并建立群聊基本信息
+            continue;
+        }else if(stoi(new_gid) < 100){
+            continue;
+        }else{
+            redis.saddvalue("群聊集合", new_gid);
+            redis.hsetValue(new_gid + "基本信息", "群号", new_gid);
+            redis.hsetValue(new_gid + "基本信息", "群名", new_gid);
+            redis.hsetValue(new_gid + "基本信息", "创建时间", GetNowTime());
+            redis.hsetValue(new_gid + "基本信息", "群介绍", "暂无");
+            redis.hsetValue(new_gid + "基本信息", "群公告", "暂无");
+
+            redis.hsetValue(new_gid + "群成员列表", command.m_uid, "群主");
+            redis.hsetValue(command.m_uid + "的群聊列表", new_gid, new_gid);
+            redis.lpush(command.m_uid + "--" + new_gid, "***************");
+
+            for(auto member: members){
+                redis.hsetValue(new_gid + "群成员列表", member, "群成员");
+                redis.hsetValue(member + "的群聊列表", new_gid, new_gid);
+                redis.lpush(member + "--" + new_gid, "***************");
+            }
+            cfd_class.sendMsg(new_gid);
+            return;
+        }
+    }
 }
 #endif

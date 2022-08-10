@@ -83,6 +83,12 @@ int main(){
         case LOOKSYSTEMMSG :
             LookSystemMsg(cfd_class, command);
             break;
+        case REFUSEADDFRIEND :
+            RefuseAddFriend(cfd_class, command);
+            break;
+        case CREATEGROUP :
+            CreateGroup(cfd_class, command);
+            break;
         }
     }
 }

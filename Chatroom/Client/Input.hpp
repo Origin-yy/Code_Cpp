@@ -1,33 +1,34 @@
 #include <iostream>
+#include <iterator>
 #include <string>
 #include "../lib/Command.hpp"
 #include "../lib/Color.hpp"
 
 using namespace std;
 
-#define SETRECVFD      -1
-#define QUIT            0
-#define LOGHIN_CHECK    1
-#define REGISTER_CHECK  2
-#define ADDFRIEND       3
-#define AGREEADDFRIEND  4
-#define LISTFRIEND      5
-#define CHATFRIEND      6
-#define FRIENDMSG       7
-#define EXITCHAT        8
-#define SHIELDFRIEND    9
-#define DELETEFRIEND   10
-#define RESTOREFRIEND  11 
-#define NEWMESSAGE     12
-#define LOOKSYSTEMMSG  13
+#define SETRECVFD       -1
+#define QUIT             0
+#define LOGHIN_CHECK     1
+#define REGISTER_CHECK   2
+#define ADDFRIEND        3
+#define AGREEADDFRIEND   4
+#define LISTFRIEND       5
+#define CHATFRIEND       6
+#define FRIENDMSG        7
+#define EXITCHAT         8
+#define SHIELDFRIEND     9
+#define DELETEFRIEND    10
+#define RESTOREFRIEND   11 
+#define NEWMESSAGE      12
+#define LOOKSYSTEMMSG   13
+#define REFUSEADDFRIEND 14
+#define CREATEGROUP      15
 
 string get_login();
 string get_uid();
 string get_pwd();
 Command get_command(string my_uid);
 
-// 获取正确输入的函数
-// 获得登录选项
 string get_login(){
     string command;
     cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
@@ -44,8 +45,6 @@ string get_login(){
     }
     return command;
 }
-
-// 得到格式正确的uid
 string get_uid(){
     // 读入输入格式正确的账号
     string input_uid;
@@ -72,8 +71,6 @@ string get_uid(){
     }
     return input_uid;
 }
-
-// 得到密码
 string get_pwd(){
     string password;
     cout << "密码: ";
@@ -99,7 +96,6 @@ string get_pwd(){
     }
     return password;
 }
-
 Command get_command(string my_uid){
     string input;
     cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
@@ -144,7 +140,6 @@ Command get_command(string my_uid){
         //         return command;
         //     }
         // }
-        // 同意好友申请命令是否合法
         else if(input.find("agree-") == 0 && input.size() ==10){
             string option0(input.begin() + 6,input.end());
             Command command(my_uid, AGREEADDFRIEND, {option0});
@@ -162,7 +157,6 @@ Command get_command(string my_uid){
         //     Command command(my_uid, LISTGROUP, {option0});
         //     return command;
         // }
-        // 
         else if(input.find("chat-") == 0 && input.size() > 5){
             string option0(input.begin() + 5, input.end());
             Command command(my_uid, CHATFRIEND, {option0});
@@ -192,6 +186,14 @@ Command get_command(string my_uid){
         else if(input.find("system") == 0 && input.size() == 6){
             string option0 = input;
             Command command(my_uid, LOOKSYSTEMMSG, {option0});
+            return command;
+        }else if(input.find("refuse-") == 0 && input.size() > 7){
+            string option0(input.begin()+8,input.end());
+            Command command(my_uid, REFUSEADDFRIEND, {option0});
+            return command;
+        }else if(input.find("create") == 0 && input.size() > 6){
+            string option0(input.begin() + 7,input.end());
+            Command command(my_uid, CREATEGROUP, {option0});
             return command;
         }
 

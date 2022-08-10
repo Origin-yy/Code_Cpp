@@ -26,6 +26,8 @@ bool DeleteFriend(TcpSocket cfd_class, Command command);
 bool Restorefriend(TcpSocket cfd_class, Command command);
 bool NewList(TcpSocket cfd_class, Command command);
 bool LookSystemMsg(TcpSocket cfd_class, Command command);
+bool RefuseAddFriend(TcpSocket cfd_class, Command command);
+bool CreateGroup(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -218,7 +220,7 @@ bool ListFriend(TcpSocket cfd_class, Command command){
             break;
         }else if(Friend == "none"){
             cout << "您当前还没有好友" << endl;
-            break;
+            return false;
         }else if(Friend == "close"){
             cout << "服务器已关闭." << endl;
             exit (0);
@@ -235,7 +237,10 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         exit(0);
     }            
     string check = cfd_class.recvMsg();        // 检查回复
-    if(check == "nofind"){
+    if(check == "close"){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }else if(check == "nofind"){
         cout << "未找到该好友." << endl;
         return false;
     }else if(check == "nohave"){
@@ -407,4 +412,63 @@ bool LookSystemMsg(TcpSocket cfd_class, Command command){
         }
     }
     return true;
+}
+bool RefuseAddFriend(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << UP << "已拒绝" << command.m_option[0] << "的好友申请" << endl;
+        return true;
+    }else if(check == "had"){
+        cout << UP  << "该用户已经是您的好友" << endl;
+        return false;
+    }else if(check == "nofind"){
+        cout << UP  << "未找到该用户的好友申请." << endl;
+        return false;
+    }
+    else{
+        cout << UP  << "其他错误" << endl;
+        return false;
+    }
+}
+bool CreateGroup(TcpSocket cfd_class, Command command){
+    // 调用展示好友列表函数展示好友列表
+    Command command0(command.m_uid, LISTFRIEND, {"无"});
+    if (!ListFriend(cfd_class, command0)){
+        cout << "无法创建群聊." << endl;
+        return false;
+    }
+    // 获得群聊初始成员列表
+    cout << "请从以上好友中选择群聊初始成员." << endl;
+    cout << "请输入好友的uid,以一个空格分割：" << endl;
+    string f_list;
+    getline(cin, f_list);
+    Command command1(command.m_uid, CREATEGROUP, {f_list});
+    // 给服务器发送创建群聊的请求
+    int ret = cfd_class.sendMsg(command1.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    // 检查回复
+    string check = cfd_class.recvMsg();        
+    if(check == "close"){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }else if(check.find("nofind") == 0){
+        string nofriend(check.begin() + 6, check.end());
+        cout << "未找到好友: " << nofriend << endl;
+        cout << "请检查好友uid或输入格式是否正确." << endl;
+        return false;
+    }else{
+        cout << "群聊创建成功,您的群号为：" << check << endl;
+        return true;
+    }
 }
