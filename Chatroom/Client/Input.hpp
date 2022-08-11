@@ -123,11 +123,20 @@ Command get_command(string my_uid){
                     string option0(input.begin() + 4, input.begin() + 7);
                     string option1(input.begin() + 8, input.end()); 
                     if(option1.size() > 100){
-                        cout << "验证消息最多100个字节" << endl;
+                        cout << "验证消息最多100个字节." << endl;
                         cout << "请输入您想进行的操作:" << endl;
                         cin.sync();
                         getline(cin, input);
                         continue;
+                    }
+                    for(auto c :option1){
+                        if(c == ' ' || c == '\n' || c == '\t' ){
+                            cout << "验证消息不能包含空白字符." << endl;
+                            cout << "请输入您想进行的操作:" << endl;
+                            cin.sync();
+                            getline(cin, input);
+                            continue;
+                        }
                     }
                     Command command(my_uid, ADDGROUP, {option0, option1});
                     return command;
@@ -157,6 +166,15 @@ Command get_command(string my_uid){
                     getline(cin, input);
                     continue;
                 }
+                for(auto c :option1){
+                        if(c == ' '){
+                            cout << "验证消息不能包含空白字符." << endl;
+                            cout << "请输入您想进行的操作:" << endl;
+                            cin.sync();
+                            getline(cin, input);
+                            continue;
+                        }
+                    }
                 Command command(my_uid, ADDFRIEND, {option0, option1});
                 return command;
             }// 没有验证消息
@@ -210,14 +228,14 @@ Command get_command(string my_uid){
             Command command(my_uid, LOOKSYSTEMMSG, {option0});
             return command;
         }else if(input.find("refuse-") == 0 && input.size() > 7){
-            string option0(input.begin()+8,input.end());
+            string option0(input.begin() + 7,input.end());
             Command command(my_uid, REFUSEADDFRIEND, {option0});
             return command;
         }else if(input == "create"){
             string option0 = input;
             Command command(my_uid, CREATEGROUP, {option0});
             return command;
-        }else if(input == "apply-" && input.size() > 6){
+        }else if(input.find("apply-") == 0 && input.size() > 6){
             string option0(input.begin() + 6, input.end());
             Command command(my_uid, LOOKGROUPAPPLY, {option0});
             return command;

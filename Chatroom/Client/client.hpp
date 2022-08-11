@@ -153,7 +153,7 @@ bool AddFriend(TcpSocket cfd_class, Command command){
         cout << "该用户已经是您的好友" << endl;
         return false;
     }else if(check == "cannot"){
-        cout << "系统消息中还有该用户未处理的申请,请先处理." << endl;
+        cout << "已向该用户发送好友申请,请等待回复." << endl;
         return false;
     }else{
         cout << "未找到该用户." << endl;
@@ -426,13 +426,13 @@ bool RefuseAddFriend(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
-        cout << UP << "已拒绝" << command.m_option[0] << "的好友申请" << endl;
+        cout << "已拒绝" << command.m_option[0] << "的好友申请" << endl;
         return true;
     }else if(check == "had"){
-        cout << UP  << "该用户已经是您的好友" << endl;
+        cout << "该用户已经是您的好友" << endl;
         return false;
     }else if(check == "nofind"){
-        cout << UP  << "未找到该用户的好友申请." << endl;
+        cout << "未找到该用户的好友申请." << endl;
         return false;
     }
     else{
