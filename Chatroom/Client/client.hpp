@@ -24,8 +24,9 @@ bool ExitChatFriend(TcpSocket cfd_class, Command command);
 bool ShieldFriend(TcpSocket cfd_class, Command command);
 bool DeleteFriend(TcpSocket cfd_class, Command command);
 bool Restorefriend(TcpSocket cfd_class, Command command);
-bool NewList(TcpSocket cfd_class, Command command);
-bool LookSystemMsg(TcpSocket cfd_class, Command command);
+bool NewMessage(TcpSocket cfd_class, Command command);
+bool LookSystem(TcpSocket cfd_class, Command command);
+bool LookNotice(TcpSocket cfd_class, Command command);
 bool RefuseAddFriend(TcpSocket cfd_class, Command command);
 bool CreateGroup(TcpSocket cfd_class, Command command);
 bool ListGroup(TcpSocket cfd_class, Command command);
@@ -152,8 +153,11 @@ bool AddFriend(TcpSocket cfd_class, Command command){
     }else if(check == "had"){
         cout << "该用户已经是您的好友" << endl;
         return false;
-    }else if(check == "cannot"){
-        cout << "已向该用户发送好友申请,请等待回复." << endl;
+    }else if(check == "cannot1"){
+        cout << "您的系统消息中存在对方发来的好友申请，请先回复." << endl;
+        return false;
+    }else if(check == "cannot2"){
+        cout << "您之前已向该用户发送好友申请,请等待回复." << endl;
         return false;
     }else{
         cout << "未找到该用户." << endl;
@@ -195,17 +199,20 @@ bool AgreeAddFriend(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
-        cout << UP << "已通过" << command.m_option[0] << "的好友申请" << endl;
+        cout << "已通过" << command.m_option[0] << "的好友申请." << endl;
         return true;
     }else if(check == "had"){
-        cout << UP  << "该用户已经是您的好友" << endl;
+        cout << "该用户已经是您的好友." << endl;
+        return false;
+    }else if(check == "haddeal"){
+        cout << "您已经处理了该用户的申请." << endl;
         return false;
     }else if(check == "nofind"){
-        cout << UP  << "未找到该用户的好友申请." << endl;
+        cout << "未找到该用户的好友申请." << endl;
         return false;
     }
     else{
-        cout << UP  << "其他错误" << endl;
+        cout << "其他错误" << endl;
         return false;
     }
 }
@@ -242,11 +249,11 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
     if(check == "close"){
         cout << "服务器已关闭." << endl; 
         exit(0);
+    }else if(check == "none"){
+        cout << "您还没有好友." << endl;
+        return false;
     }else if(check == "nofind"){
         cout << "未找到该好友." << endl;
-        return false;
-    }else if(check == "nohave"){
-        cout << "您已被对方删除." << endl;
         return false;
     }
     // 有这个好友就打印历史聊天记录
@@ -321,8 +328,10 @@ bool ShieldFriend(TcpSocket cfd_class, Command command){
     }else if(check == "ok"){
         cout << "已屏蔽该好友的会话." << endl;
         return true;
-    }else{
+    }else if(check == "had") {
         cout << "该好友已被屏蔽." << endl;
+    }else{
+        cout << "错误" << endl;
     }
     return false;
 }
@@ -369,7 +378,7 @@ bool Restorefriend(TcpSocket cfd_class, Command command){
     }
     return false;
 }
-bool NewList(TcpSocket cfd_class, Command command){
+bool NewMessage(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl;
@@ -378,7 +387,7 @@ bool NewList(TcpSocket cfd_class, Command command){
     while(true){
         string Friend = cfd_class.recvMsg();
         if(Friend == "end"){
-            cout << "未读消息展示完毕" << endl;
+            cout << endl;
             break;
         }else if(Friend == "none"){
             cout << "您当前没有未读消息" << endl;
@@ -392,7 +401,7 @@ bool NewList(TcpSocket cfd_class, Command command){
     }
     return true;
 }
-bool LookSystemMsg(TcpSocket cfd_class, Command command){
+bool LookSystem(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl;
@@ -415,6 +424,29 @@ bool LookSystemMsg(TcpSocket cfd_class, Command command){
     }
     return true;
 }
+bool LookNotice(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string notice = cfd_class.recvMsg();
+        if(notice == "end"){
+            cout << "以上为通知消息" << endl;
+            break;
+        }else if(notice == "none"){
+            cout << "通知消息为空" << endl;
+            break;
+        }else if(notice == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << notice << endl;
+        }
+    }
+    return true;
+}
 bool RefuseAddFriend(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
@@ -430,6 +462,9 @@ bool RefuseAddFriend(TcpSocket cfd_class, Command command){
         return true;
     }else if(check == "had"){
         cout << "该用户已经是您的好友" << endl;
+        return false;
+    }else if(check == "haddeal"){
+        cout << "您已经处理了该用户的申请." << endl;
         return false;
     }else if(check == "nofind"){
         cout << "未找到该用户的好友申请." << endl;
@@ -466,8 +501,8 @@ bool CreateGroup(TcpSocket cfd_class, Command command){
         exit(0);
     }else if(check.find("nofind") == 0){
         string nofriend(check.begin() + 6, check.end());
-        cout << "未找到好友: " << nofriend << endl;
-        cout << "请检查好友uid或输入格式是否正确." << endl;
+        cout << "输入格式有误." << endl;
+        cout << "应输入好友的uid并以空格分割." << endl;
         return false;
     }else{
         cout << "群聊创建成功,群号为：" << check << endl;
@@ -512,7 +547,7 @@ bool LookGroupApply(TcpSocket cfd_class, Command command){
             cout << "当前还没有入群申请" << endl;
             return false;
         }else if(apply == "cannot"){
-            cout << "您在" << endl;
+            cout << "您在该群聊中没有此权限." << endl;
             return false;
         }else if(apply == "end"){
             cout << "入群申请展示完毕." << endl;

@@ -42,8 +42,9 @@ int main(){
             return 0;
         }
     }
+    cout << L_RED << "欢迎使用本聊天室." << NONE << endl;
     while(true){
-        display_menu1();
+        NewMessage(cfd_class, command);
         command = get_command(my_uid);
         switch (command.m_flag) {
         case QUIT :
@@ -78,10 +79,13 @@ int main(){
             Restorefriend(cfd_class, command);
             break;
         case NEWMESSAGE :
-            NewList(cfd_class, command);
+            NewMessage(cfd_class, command);
             break;
-        case LOOKSYSTEMMSG :
-            LookSystemMsg(cfd_class, command);
+        case LOOKSYSTEM :
+            LookSystem(cfd_class, command);
+            break;
+        case LOOKNOTICE :
+            LookNotice(cfd_class, command);
             break;
         case REFUSEADDFRIEND :
             RefuseAddFriend(cfd_class, command);

@@ -3,6 +3,7 @@
 #include <string>
 #include "../lib/Command.hpp"
 #include "../lib/Color.hpp"
+#include "Display.hpp"
 
 using namespace std;
 
@@ -20,13 +21,15 @@ using namespace std;
 #define DELETEFRIEND    10
 #define RESTOREFRIEND   11
 #define NEWMESSAGE      12
-#define LOOKSYSTEMMSG   13
+#define LOOKSYSTEM      13
 #define REFUSEADDFRIEND 14
 #define CREATEGROUP     15
 #define LISTGROUP       16
 #define ADDGROUP        17
 #define ADD             18
 #define LOOKGROUPAPPLY  19
+#define JOINGROUP       20
+#define LOOKNOTICE      21
 
 string get_login();
 string get_uid();
@@ -124,7 +127,7 @@ Command get_command(string my_uid){
                     string option1(input.begin() + 8, input.end()); 
                     if(option1.size() > 100){
                         cout << "验证消息最多100个字节." << endl;
-                        cout << "请输入您想进行的操作:" << endl;
+                        cout << "就决定是你了：" << endl;
                         cin.sync();
                         getline(cin, input);
                         continue;
@@ -132,7 +135,7 @@ Command get_command(string my_uid){
                     for(auto c :option1){
                         if(c == ' ' || c == '\n' || c == '\t' ){
                             cout << "验证消息不能包含空白字符." << endl;
-                            cout << "请输入您想进行的操作:" << endl;
+                            cout << "就决定是你了：" << endl;
                             cin.sync();
                             getline(cin, input);
                             continue;
@@ -151,7 +154,7 @@ Command get_command(string my_uid){
             string option0(input.begin() + 4, input.begin() + 8);  // 存下要添加的账号
             if(option0 == my_uid){
                 cout << "不允许添加自己" << endl;
-                cout << "请输入您想进行的操作:" << endl;
+                cout << "就决定是你了：" << endl;
                 cin.sync();
                 getline(cin, input);
                 continue;
@@ -161,7 +164,7 @@ Command get_command(string my_uid){
                 string option1(input.begin() + 9, input.end()); 
                 if(option1.size() > 100){
                     cout << "验证消息最多100个字节" << endl;
-                    cout << "请输入您想进行的操作:" << endl;
+                    cout << "就决定是你了：" << endl;
                     cin.sync();
                     getline(cin, input);
                     continue;
@@ -169,7 +172,7 @@ Command get_command(string my_uid){
                 for(auto c :option1){
                         if(c == ' '){
                             cout << "验证消息不能包含空白字符." << endl;
-                            cout << "请输入您想进行的操作:" << endl;
+                            cout << "就决定是你了：" << endl;
                             cin.sync();
                             getline(cin, input);
                             continue;
@@ -218,14 +221,19 @@ Command get_command(string my_uid){
             Command command(my_uid, RESTOREFRIEND, {option0});
             return command;
         }
-        else if(input.find("new") == 0 && input.size() == 3){
+        else if(input.find("message") == 0 && input.size() == 7){
             string option0 = input;
             Command command(my_uid, NEWMESSAGE, {option0});
             return command;
         }
         else if(input.find("system") == 0 && input.size() == 6){
             string option0 = input;
-            Command command(my_uid, LOOKSYSTEMMSG, {option0});
+            Command command(my_uid, LOOKSYSTEM, {option0});
+            return command;
+        }
+        else if(input.find("notice") == 0 && input.size() == 6){
+            string option0 = input;
+            Command command(my_uid, LOOKNOTICE, {option0});
             return command;
         }else if(input.find("refuse-") == 0 && input.size() > 7){
             string option0(input.begin() + 7,input.end());
@@ -239,6 +247,18 @@ Command get_command(string my_uid){
             string option0(input.begin() + 6, input.end());
             Command command(my_uid, LOOKGROUPAPPLY, {option0});
             return command;
+        }else if(input == "menu"){
+            display_menu1();
+            cout << "就决定是你了：" << endl;
+            cin.sync();
+            getline(cin, input);
+            continue;
+        }else if(input == "help"){
+            display_help();
+            cout << "就决定是你了：" << endl;
+            cin.sync();
+            getline(cin, input);
+            continue;
         }
 
         // 退出命令是否合法
@@ -247,7 +267,7 @@ Command get_command(string my_uid){
                 return command;
         }else{
             cout << "无效的操作，请重新输入." << endl;
-            cout << "请输入您想进行的操作:" << endl;
+            cout << "就决定是你了：" << endl;
             cin.sync();
             getline(cin, input);
             continue;
