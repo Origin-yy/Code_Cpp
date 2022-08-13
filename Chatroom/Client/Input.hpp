@@ -6,7 +6,6 @@
 #include "Display.hpp"
 
 using namespace std;
-
 #define SETRECVFD       -1
 #define QUIT             0
 #define LOGHIN_CHECK     1
@@ -27,9 +26,16 @@ using namespace std;
 #define LISTGROUP       16
 #define ADDGROUP        17
 #define ADD             18
-#define LOOKGROUPAPPLY  19
-#define JOINGROUP       20
-#define LOOKNOTICE      21
+#define LOOKNOTICE      19
+#define ABOUTGROUP      20
+#define REQUSTLIST      21
+#define PASSAPPLY       22
+#define DENYAPPLY       23
+#define SETMEMBER       24
+#define EXITGROUP       25
+#define DISPLAYMEMBER   26
+#define REMOVEMEMBER    27
+#define INFOXXXX        28
 
 string get_login();
 string get_uid();
@@ -38,7 +44,7 @@ Command get_command(string my_uid);
 
 string get_login(){
     string command;
-    cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
+    cout << L_WHITE << "就决定是你了：" << NONE << endl;
     getline(cin,command);
     if(cin.eof()){
         cout << "读到EOF" << endl;
@@ -105,7 +111,7 @@ string get_pwd(){
 }
 Command get_command(string my_uid){
     string input;
-    cout << L_WHITE << "请选择您想进行的操作: " << NONE << endl;
+    cout << L_WHITE << "就决定是你了：" << NONE << endl;
     cin.sync();
     getline(cin, input);
     //  循环判断输入是否合法，不合法要求再次输入并判断
@@ -243,9 +249,9 @@ Command get_command(string my_uid){
             string option0 = input;
             Command command(my_uid, CREATEGROUP, {option0});
             return command;
-        }else if(input.find("apply-") == 0 && input.size() > 6){
+        }else if(input.find("about-") == 0 && input.size() == 9){
             string option0(input.begin() + 6, input.end());
-            Command command(my_uid, LOOKGROUPAPPLY, {option0});
+            Command command(my_uid, ABOUTGROUP, {option0});
             return command;
         }else if(input == "menu"){
             display_menu1();
@@ -260,8 +266,6 @@ Command get_command(string my_uid){
             getline(cin, input);
             continue;
         }
-
-        // 退出命令是否合法
         else if(input == "quit"){
             Command command(my_uid, QUIT, {"无"});
                 return command;

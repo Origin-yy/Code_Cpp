@@ -42,9 +42,13 @@ int main(){
             return 0;
         }
     }
-    cout << L_RED << "欢迎使用本聊天室." << NONE << endl;
+    cout << L_GREEN << "欢迎使用本聊天室." << NONE << endl;
+    bool display = true;
     while(true){
-        NewMessage(cfd_class, command);
+        Command command0(my_uid, NEWMESSAGE, {"newmessage"});
+        if(display)
+            NewMessage(cfd_class, command0);
+        display = true;
         command = get_command(my_uid);
         switch (command.m_flag) {
         case QUIT :
@@ -80,6 +84,7 @@ int main(){
             break;
         case NEWMESSAGE :
             NewMessage(cfd_class, command);
+            display = false;
             break;
         case LOOKSYSTEM :
             LookSystem(cfd_class, command);
@@ -96,8 +101,32 @@ int main(){
         case LISTGROUP :
             ListGroup(cfd_class, command);
             break;
-        case LOOKGROUPAPPLY :
-            LookGroupApply(cfd_class, command);
+        case ABOUTGROUP :
+            AboutGroup(cfd_class, command);
+            break;
+        case REQUSTLIST :
+            RequestList(cfd_class, command);
+            break;
+        case PASSAPPLY :
+            PassApply(cfd_class, command);
+            break;
+        case DENYAPPLY :
+            DenyApply(cfd_class, command);
+            break;
+        case SETMEMBER :
+            SetMember(cfd_class, command);
+            break;
+        case EXITGROUP :
+            ExitGroup(cfd_class, command);
+            break;
+        case DISPLAYMEMBER :
+            DisplyMember(cfd_class, command);
+            break;
+        case REMOVEMEMBER :
+            RemoveMember(cfd_class, command);
+            break;
+        case INFOXXXX :
+            InfoXXXX(cfd_class, command);
             break;
         }
     }

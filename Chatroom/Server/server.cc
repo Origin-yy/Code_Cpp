@@ -18,8 +18,8 @@ int main(){
     struct timeval timeout = {1, 500000};
     redis.connect(timeout);    //超时连接
     // 将每个账号的在线状态改为-1
-    int num = redis.scard("accounts");
-    redisReply **allAccounts = redis.smembers("accounts");
+    int num = redis.scard("用户uid集合");
+    redisReply **allAccounts = redis.smembers("用户uid集合");
     for(int i = 0; i < num; i++){
         redis.hsetValue(allAccounts[i]->str, "在线状态", "-1");
     }

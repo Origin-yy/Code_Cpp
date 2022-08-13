@@ -8,6 +8,7 @@
 #include <string>
 #include <signal.h>
 #include <cstdlib>
+#include <unistd.h>
 
 void my_error(const char* errorMsg);
 void *recvfunc(void* arg);
@@ -30,7 +31,15 @@ bool LookNotice(TcpSocket cfd_class, Command command);
 bool RefuseAddFriend(TcpSocket cfd_class, Command command);
 bool CreateGroup(TcpSocket cfd_class, Command command);
 bool ListGroup(TcpSocket cfd_class, Command command);
-bool LookGroupApply(TcpSocket cfd_class, Command command);
+bool AboutGroup(TcpSocket cfd_class, Command command);
+bool RequestList(TcpSocket cfd_class, Command command);
+bool PassApply(TcpSocket cfd_class, Command command);
+bool DenyApply(TcpSocket cfd_class, Command command);
+bool SetMember(TcpSocket cfd_class, Command command);
+bool ExitGroup(TcpSocket cfd_class, Command command);
+bool DisplyMember(TcpSocket cfd_class, Command command);
+bool RemoveMember(TcpSocket cfd_class, Command command);
+bool InfoXXXX(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
     string myuid;
@@ -129,11 +138,15 @@ bool Register(TcpSocket cfd_class){
     Command command("NULL", REGISTER_CHECK,{pwd});
     int ret = cfd_class.sendMsg(command.To_Json());  // 命令类将类转josn格式，再转json字符串格式，套接字类发送json字符串格式
     if(ret == 0 || ret == -1){
-        cout << "服务器已关闭" << endl;
+        cout << "服务器已关闭." << endl;
         exit(0);
     }
     // 收到生成的密码
     string new_uid = cfd_class.recvMsg();
+    if(new_uid == "close"){
+        cout << "服务器已关闭." << endl;
+        exit(0);
+    }
     cout << "您注册的uid为: " << new_uid << endl << "忘记后无法找回，请牢记." << endl;
     return true;
 }
@@ -262,7 +275,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         while(true){
             HistoryMsg = cfd_class.recvMsg();
             if(HistoryMsg == "close" || HistoryMsg == "-1"){
-                cout << "服务器已关闭" << endl;
+                cout << "服务器已关闭." << endl;
                 exit(0);
             } 
             cout << HistoryMsg << endl;
@@ -288,6 +301,14 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 cout << "服务器已关闭." << endl; 
                 exit(0);
             }
+            string check = cfd_class.recvMsg();
+            if(check == "close"){
+                cout << "服务器已关闭." << endl;
+                exit(0);
+            }else if(check == "nohave"){
+                cout << "很遗憾,该用户已经和您解除了好友关系(输入#退出)." << endl;
+                cout << "莫愁前路无知己，天下谁人不识君." << endl;
+            }
         }
     }
     return true;
@@ -307,7 +328,7 @@ bool ExitChatFriend(TcpSocket cfd_class, Command command){
         cout << "已退出聊天" << endl;
         return true;
     }else if (check == "no"){
-        cout << "无效的操作，请重新输入." << endl;
+        cout << L_WHITE << "无效的操作，请重新输入." << NONE << endl;
         return false;
     }
     return false;
@@ -387,7 +408,6 @@ bool NewMessage(TcpSocket cfd_class, Command command){
     while(true){
         string Friend = cfd_class.recvMsg();
         if(Friend == "end"){
-            cout << endl;
             break;
         }else if(Friend == "none"){
             cout << "您当前没有未读消息" << endl;
@@ -499,10 +519,10 @@ bool CreateGroup(TcpSocket cfd_class, Command command){
     if(check == "close"){
         cout << "服务器已关闭." << endl; 
         exit(0);
-    }else if(check.find("nofind") == 0){
+    }else if(check.find("nofind") == 0 ){
         string nofriend(check.begin() + 6, check.end());
-        cout << "输入格式有误." << endl;
         cout << "应输入好友的uid并以空格分割." << endl;
+        cout << "没有找到好友：." << nofriend << endl;
         return false;
     }else{
         cout << "群聊创建成功,群号为：" << check << endl;
@@ -532,7 +552,98 @@ bool ListGroup(TcpSocket cfd_class, Command command){
     }
     return true;
 }
-bool LookGroupApply(TcpSocket cfd_class, Command command){
+bool AboutGroup(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << "关于群聊" << command.m_option[0] << "：" << endl;
+    }else if(check == "nohave"){
+        cout << "该群聊不存在" << endl;
+        return false;
+    }else if(check == "no"){
+        cout << "你不在该群聊中." << endl;
+        return false;
+    }
+    string option0 = command.m_option[0];   // 选项第一个为想要操作的群聊
+    // while循环不断展示选项和获取操作
+    while(true){
+        display_menu2();
+        string input;
+        cout << L_WHITE << "就决定是你了：" << NONE << endl;
+        cin.sync();
+        getline(cin, input);
+
+        if(input == "return"){
+            break;
+        }
+        else if(input == "request"){
+            string option0 = command.m_option[0];
+            Command command1(command.m_uid, REQUSTLIST, {option0});
+            RequestList(cfd_class, command1);
+        }
+        else if(input.find("pass-") == 0 && input.size() == 9){
+            string option0 = command.m_option[0];
+            string option1(input.begin() + 5, input.end());
+            Command command1(command.m_uid, PASSAPPLY, {option0, option1});
+            PassApply(cfd_class, command1);
+        }
+        else if(input.find("deny-") == 0 && input.size() == 9){
+            string option0 = command.m_option[0];
+            string option1(input.begin() + 5, input.end());
+            Command command1(command.m_uid, DENYAPPLY, {option0, option1});
+            DenyApply(cfd_class, command1);
+        }
+        else if(input.find("set-") == 0 && input.size() == 15){
+            string option0 = command.m_option[0];
+            string option1(input.begin() + 4, input.begin() + 8);
+            string option2(input.begin() + 9, input.end());
+            if(option2 == "群主"){
+                cout << L_WHITE << "此操作成功的话会使您失去群主身份，确认继续？(y/n)" << NONE << endl;
+                string state;
+                getline(cin, state);
+                if(state != "y"){
+                    continue;
+                }
+            }
+            Command command1(command.m_uid, SETMEMBER, {option0, option1, option2});
+            SetMember(cfd_class, command1);
+        }
+        else if(input == "exit"){
+            string option0 = command.m_option[0];
+            Command command1(command.m_uid, EXITGROUP, {option0});
+            ExitGroup(cfd_class, command1);
+            break;
+        }
+        else if(input == "members"){
+            string option0 = command.m_option[0];
+            Command command1(command.m_uid, DISPLAYMEMBER , {option0});
+            DisplyMember(cfd_class, command1);
+        }
+        else if(input.find("remove-") == 0 && input.size() == 11){
+            string option0 = command.m_option[0];
+            string option1(input.begin() + 7, input.end());
+            Command command1(command.m_uid, REMOVEMEMBER, {option0, option1});
+            RemoveMember(cfd_class, command1);
+        }
+        else if(input == "info"){
+            string option0 = command.m_option[0];
+            Command command1(command.m_uid, INFOXXXX, {option0});
+            InfoXXXX(cfd_class, command1);
+        }else{
+            cout << "无效的操作，请重新输入." << endl;
+            continue;
+        }
+    }
+    return true;
+}
+bool RequestList(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl;
@@ -556,5 +667,167 @@ bool LookGroupApply(TcpSocket cfd_class, Command command){
             cout << apply << endl;
         }
     }
+    return true;
+}
+bool PassApply(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit(0);
+    }else if(check == "cannot"){
+        cout << "您在此群聊中无此权限." << endl;
+        return false;
+    }else if(check == "nofind"){
+        cout << "没有该用户的申请." << endl;
+        return false;
+    }else if(check == "haddeal"){
+        cout << "该用户的申请已被处理." << endl;
+        return false;
+    }else if(check == "had"){
+        cout << "该用户已经在群里." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "已通过该用户的入群申请." << endl;
+        return true;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+}
+bool DenyApply(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "cannot"){
+        cout << "您在此群聊中无此权限." << endl;
+        return false;
+    }else if(check == "nofind"){
+        cout << "没有该用户的申请." << endl;
+        return false;
+    }else if(check == "haddeal"){
+        cout << "该用户的申请已被处理." << endl;
+        return false;
+    }else if(check == "had"){
+        cout << "该用户已经在群里." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "已拒绝该用户的入群申请." << endl;
+        return true;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+}
+bool SetMember(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "cannot"){
+        cout << "您在此群聊中无此权限." << endl;
+        return false;
+    }else if(check == "cannot1"){
+        cout << "您不能修改自己的权限，只能转让群,." << endl;
+        return false;
+    }else if(check == "nohave"){
+        cout << "该用户不是群聊成员." << endl;
+        return false;
+    }else if(check == "cannot2"){
+        cout << "只能设置管理员,群成员和转让群." << endl;
+        return false;
+    }else if(check == "hadis"){
+        cout << "该用户已经是此职位." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "已修改该用户的权限." << endl;
+        return true;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+}
+bool ExitGroup(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "cannot"){
+        cout << "身为群主，您无法退群，只能转让群或解散群." << endl;
+        return false;
+    }else if(check == "ok"){
+        cout << "您已退出该群聊." << endl;
+        return false;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+}
+bool DisplyMember(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    while(true){
+        string memeber = cfd_class.recvMsg();
+        if(memeber == "end"){
+            cout << "群成员展示完毕" << endl;
+            break;
+        }else if(memeber == "close"){
+            cout << "服务器已关闭." << endl;
+            exit (0);
+        }else {
+            cout << memeber << endl;
+        }
+    }
+    return true;
+}
+bool RemoveMember(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << "已将其移出群聊." << endl;
+        return false;
+    }else if(check == "cannot"){
+        cout << "您没有此权限." << endl;
+        return false;
+    }else if(check == "cannot0"){
+        cout << "您不能移出管理员或群主." << endl;
+        return false;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+}
+bool InfoXXXX(TcpSocket cfd_class, Command command){
+
     return true;
 }

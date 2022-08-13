@@ -28,9 +28,16 @@
 #define LISTGROUP       16
 #define ADDGROUP        17
 #define ADD             18
-#define LOOKGROUPAPPLY  19
-#define JOINGROUP       20
-#define LOOKNOTICE      21
+#define LOOKNOTICE      19
+#define ABOUTGROUP      20
+#define REQUSTLIST      21
+#define PASSAPPLY       22
+#define DENYAPPLY       23
+#define SETMEMBER       24
+#define EXITGROUP       25
+#define DISPLAYMEMBER   26
+#define REMOVEMEMBER    27
+#define INFOXXXX        28
 
 using namespace std;
 extern Redis redis;
@@ -63,7 +70,15 @@ void RefuseAddFriend(TcpSocket cfd_class, Command command);
 void CreateGroup(TcpSocket cfd_class, Command command);
 void ListGroup(TcpSocket cfd_class, Command command);
 void LookGroupApply(TcpSocket cfd_class, Command command);
-
+void AboutGroup(TcpSocket cfd_class, Command command);
+void RequestList(TcpSocket cfd_class, Command command);
+void PassApply(TcpSocket cfd_class, Command command);
+void DenyApply(TcpSocket cfd_class, Command command);
+void SetMember(TcpSocket cfd_class, Command command);
+void ExitGroup(TcpSocket cfd_class, Command command);
+void DisplyMember(TcpSocket cfd_class, Command command);
+void RemoveMember(TcpSocket cfd_class, Command command);
+void InfoXXXX(TcpSocket cfd_class, Command command);
 
 void my_error(const char* errorMsg) {
     cout << errorMsg << endl;
@@ -142,11 +157,34 @@ void taskfunc(void *arg){
         case LISTGROUP:
             ListGroup(cfd_class, command);
             break;
-        case LOOKGROUPAPPLY:
-            LookGroupApply(cfd_class, command);
+        case ABOUTGROUP :
+            AboutGroup(cfd_class, command);
             break;
-    }
-    return;
+        case REQUSTLIST :
+            RequestList(cfd_class, command);
+            break;
+        case PASSAPPLY :
+            PassApply(cfd_class, command);
+            break;
+        case DENYAPPLY :
+            DenyApply(cfd_class, command);
+            break;
+        case SETMEMBER :
+            SetMember(cfd_class, command);
+            break;
+        case EXITGROUP :
+            ExitGroup(cfd_class, command);
+            break;
+        case DISPLAYMEMBER :
+            DisplyMember(cfd_class, command);
+            break;
+        case REMOVEMEMBER :
+            RemoveMember(cfd_class, command);
+            break;
+        case INFOXXXX :
+            InfoXXXX(cfd_class, command);
+            break;
+        }
 }
 void Login(TcpSocket cfd_class, Command command){
     // 从数据库调取对应数据进行核对，并回复结果
@@ -165,9 +203,10 @@ void Login(TcpSocket cfd_class, Command command){
             redis.hsetValue(command.m_uid, "聊天对象", "0");
             redis.hsetValue(command.m_uid, "通知套接字", "-1");
             cfd_class.sendMsg("ok");
-            cout << "已发送ok" << endl; 
+            cout << "用户" << command.m_uid << "登录成功" << endl; 
         }
     }
+    return;
 }
 void Register(TcpSocket cfd_class, Command command){
     srand((unsigned)time(NULL));
@@ -190,6 +229,7 @@ void Register(TcpSocket cfd_class, Command command){
             redis.hsetValue(new_uid + "的未读消息", "系统消息", "0");
             redis.hsetValue(new_uid + "的未读消息", "通知消息", "0");
             cfd_class.sendMsg(new_uid);
+            cout << "用户" << new_uid << "注册成功" << endl; 
             return;
         }
     }
@@ -249,16 +289,16 @@ void AddFriend(TcpSocket cfd_class, Command command){
 }
 void AddGroup(TcpSocket cfd_class, Command command){
     // 群聊不存在，通知客户端
-    if(redis.hlen(command.m_option[0] + "的基本信息") == 0){   
+    if(!redis.sismember("群聊集合", command.m_option[0])){   
         cfd_class.sendMsg("nofind");
         return;
     }
     // 群聊存在,判断用户是否已在该群聊里                                                    
     int GroupNum = redis.hlen(command.m_uid + "的群聊列表"); 
-    if(GroupNum != 0){                                                       // 群聊数量不为0时，列表中可能已经有准好友,为0时可定没有，跳过此步骤
-        redisReply** f_uid =  redis.hkeys(command.m_uid + "的群聊列表");  // 得到群聊列表
+    if(GroupNum != 0){                                                       // 群聊数量不为0时，列表中可能已经有该群聊,为0时可定没有，跳过此步骤
+        redisReply** g_uid =  redis.hkeys(command.m_uid + "的群聊列表");  // 得到群聊列表
         for(int i = 0; i < GroupNum; i++){                                   // 遍历群聊列表，看看该群聊是否在里面
-            if(f_uid[i]->str == command.m_option[0]){                        // 该群聊已在列表中就告诉客户端并停止申请添加群聊
+            if(g_uid[i]->str == command.m_option[0]){                        // 该群聊已在列表中就告诉客户端并停止申请添加群聊
                 cfd_class.sendMsg("had");
                 return;
             }
@@ -281,8 +321,9 @@ void AddGroup(TcpSocket cfd_class, Command command){
     int num = redis.hlen(command.m_option[0] + "的群成员列表");
     redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
     for(int i = 0; i < num; i++){
-        string position = redis.gethash(command.m_option[0] + "群成员列表", members[i]->str);
-        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+        cout << "0" << endl;
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position == "管理员" || position == "群主"){
             string num = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
             redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num)+1));
             redis.lpush(members[i]->str + static_cast<string>("的通知消息"), 
@@ -306,15 +347,16 @@ void AgreeAddFriend(TcpSocket cfd_class, Command command){
             cfd_class.sendMsg("nofind");
             return;
         }
-        // 如果系统消息列表里有申请者的申请,但是已经处理过了，就不能在处理
+        // 如果系统消息列表里有申请者的申请,但是已经处理过了，就不能在处理,只能处理申请状态为未处理的申请
         string msg = redis.gethash(command.m_uid + "的系统消息", command.m_option[0]);
-        string newmsg(msg.begin(), msg.end() - 11);
-        if(newmsg == "(已拒绝)" || newmsg == "(已通过)"){
+        string state(msg.end() - 11,msg.end());
+        if(state == "(已拒绝)" || state == "(已通过)"){
             cfd_class.sendMsg("haddeal");
             return;
         }
         // 更改自己这边的申请者的申请状态为已通过
         string pass = "(已通过)";
+        string newmsg(msg.end() - 11,msg.end());
         string Newmsg = newmsg + pass;
         redis.hsetValue(command.m_uid + "的系统消息", command.m_option[0], Newmsg);
         // 同意者的系统消息数量-1
@@ -338,7 +380,7 @@ void AgreeAddFriend(TcpSocket cfd_class, Command command){
         if(online != "-1"){
             string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
             TcpSocket friendFd_class(stoi(friend_recvfd));
-            friendFd_class.sendMsg(command.m_uid + "已通过了您的好友申请." + GetNowTime());
+            friendFd_class.sendMsg(command.m_uid + "通过了您的好友申请.");
         }
     }else{
         cfd_class.sendMsg("had");
@@ -357,10 +399,12 @@ void ListFriend(TcpSocket cfd_class, Command command){
         for(int i = 0; i < friendNum; i++){
             string friend_mark = redis.gethash(command.m_uid + "的好友列表", f_uid[i]->str);
             string isonline = redis.gethash(f_uid[i]->str, "在线状态");
-            if(isonline != "-1"){
-                cfd_class.sendMsg(L_GREEN + friend_mark + NONE + "(" + f_uid[i]->str + ")");
-            }else {
-                cfd_class.sendMsg(L_WHITE + friend_mark + NONE + "(" + f_uid[i]->str + ")");
+            if(!redis.sismember(command.m_uid + "的屏蔽列表", f_uid[i]->str)){
+                if(isonline != "-1"){
+                    cfd_class.sendMsg(L_GREEN + friend_mark + NONE + "(" + f_uid[i]->str + ")");
+                }else {
+                    cfd_class.sendMsg(L_WHITE + friend_mark + NONE + "(" + f_uid[i]->str + ")");
+                }
             }
         }
         cfd_class.sendMsg("end");
@@ -405,7 +449,7 @@ void FriendMsg(TcpSocket cfd_class, Command command){
     TcpSocket myFd_class(stoi(my_recvfd));
     myFd_class.sendMsg(UP + msg0);
     // 如果好友把自己屏蔽的话，什么都不做，直接返回
-    if(redis.gethash(command.m_option[0], "屏蔽数量") != "0"){
+    if(redis.scard(command.m_option[0] + "的屏蔽列表")){
         if(redis.sismember(command.m_option[0] + "的屏蔽列表", command.m_uid)){
             return;
         }
@@ -440,7 +484,7 @@ void FriendMsg(TcpSocket cfd_class, Command command){
     if(online != "-1" && ChatFriend != command.m_uid){  // 好友在线但没和我聊天
         string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
         TcpSocket friendFd_class(stoi(friend_recvfd));
-        friendFd_class.sendMsg(command.m_uid + "发来了一条消息.........." + GetNowTime());
+        friendFd_class.sendMsg(command.m_uid + "发来了一条消息" + GetNowTime());
     }
     return;
 }
@@ -461,14 +505,14 @@ void ShieldFriend(TcpSocket cfd_class, Command command){
         return;
     }
     // 如果之前没有好友被屏蔽，就直接屏蔽该好友，并返回
-    int shieldNum = redis.hlen(command.m_uid + "屏蔽列表");   
+    int shieldNum = redis.scard(command.m_uid + "屏蔽列表");   
     if(shieldNum == 0){
         redis.saddvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
         cfd_class.sendMsg("ok");
         return;
     }
     // 如果屏蔽列表里已经有了该好友，通知客户端并返回
-    redisReply** shield_list = redis.hkeys(command.m_uid + "的屏蔽列表");    
+    redisReply** shield_list = redis.smembers(command.m_uid + "的屏蔽列表");    
     for(int i = 0; i < shieldNum; i++){                            
         if(shield_list[i]->str == command.m_option[0]){
             cfd_class.sendMsg("had");
@@ -493,18 +537,18 @@ void DeleteFriend(TcpSocket cfd_class, Command command){
     string num1 = redis.gethash(command.m_option[0] + "的未读消息", "通知消息");
     redis.hsetValue(command.m_option[0] + "的未读消息", "通知消息", to_string(stoi(num1)+1));
     // 通知消息里告诉被删者
-    redis.lpush(command.m_uid + "的通知消息", command.m_uid + "删除了您.........." + GetNowTime());
+    redis.lpush(command.m_uid + "的通知消息", command.m_uid + "解除了和您的好友关系" + GetNowTime());
     // 如果被删者在线，给他的通知套接字一个提醒
     string online = redis.gethash(command.m_option[0], "在线状态");
     if(online != "-1"){
         string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
         TcpSocket friendFd_class(stoi(friend_recvfd));
-        friendFd_class.sendMsg(command.m_uid + "删除了您.........." + GetNowTime());
+        friendFd_class.sendMsg(command.m_uid + "解除了和您的好友关系");
     }
     // 我的屏蔽列表里是否有该好友，有就删掉，没有就不管
-    int shieldNum = redis.hlen(command.m_uid + "的屏蔽列表");            // 是否有好友被屏蔽
+    int shieldNum = redis.scard(command.m_uid + "的屏蔽列表");            // 是否有好友被屏蔽
     if(shieldNum != 0){
-        redisReply** shield_list = redis.hkeys(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
+        redisReply** shield_list = redis.smembers(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
         for(int i = 0; i < shieldNum; i++){                            
             if(shield_list[i]->str == command.m_option[0]){                            // 被屏蔽就解屏蔽
                 redis.sremvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
@@ -513,9 +557,9 @@ void DeleteFriend(TcpSocket cfd_class, Command command){
         }
     }
     // 对方的屏蔽列表里是否有该好友，有就删掉，没有就不管
-    int shieldNum1 = redis.hlen(command.m_uid + "的屏蔽列表");            // 是否有好友被屏蔽
+    int shieldNum1 = redis.scard(command.m_uid + "的屏蔽列表");            // 是否有好友被屏蔽
     if(shieldNum1 != 0){
-        redisReply** shield_list1 = redis.hkeys(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
+        redisReply** shield_list1 = redis.smembers(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
         for(int i = 0; i < shieldNum1; i++){                            
             if(shield_list1[i]->str == command.m_option[0]){                            // 被屏蔽就解屏蔽
                 redis.sremvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
@@ -535,12 +579,12 @@ void Restorefriend(TcpSocket cfd_class, Command command){
         return;
     }
     // 是否有好友被屏蔽
-    int shieldNum = redis.hlen(command.m_uid + "的屏蔽列表");
+    int shieldNum = redis.scard(command.m_uid + "的屏蔽列表");
     if(shieldNum == 0){
         cfd_class.sendMsg("nofind");
         return;
     }
-    redisReply** shield_list = redis.hkeys(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
+    redisReply** shield_list = redis.smembers(command.m_uid + "的屏蔽列表");        // 该好友是否被屏蔽
     for(int i = 0; i < shieldNum; i++){                            
         if(shield_list[i]->str == command.m_option[0]){                            // 被屏蔽就解屏蔽
             redis.sremvalue(command.m_uid + "的屏蔽列表", command.m_option[0]);
@@ -548,6 +592,7 @@ void Restorefriend(TcpSocket cfd_class, Command command){
             return;
         }
     }
+    // 没有别屏蔽就告诉客户端
     cfd_class.sendMsg("nofind");
     return;
 }
@@ -611,9 +656,9 @@ void RefuseAddFriend(TcpSocket cfd_class, Command command){
         // 拒绝者的系统消息数量-1
         string nownum = redis.gethash(command.m_uid + "的未读消息", "系统消息");
         redis.hsetValue(command.m_uid + "的未读消息", "系统消息", (to_string(stoi(nownum) - 1)));
-        // 在申请者的系统通知里写入未通过消息
+        // 在申请者的通知消息里写入未通过消息
         redis.lpush(command.m_option[0] + "的通知消息", command.m_uid + "拒绝了您的好友申请." + GetNowTime());
-        // 申请者未读消息中的系统通知数量+1
+        // 申请者未读消息中的通知消息数量+1
         string num1 = redis.gethash(command.m_option[0] + "的未读消息", "通知消息");
         redis.hsetValue(command.m_option[0] + "的未读消息", "通知消息", to_string(stoi(num1)+1));
         // 如果申请者在线，给他的通知套接字一个提醒
@@ -622,7 +667,7 @@ void RefuseAddFriend(TcpSocket cfd_class, Command command){
             string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
             TcpSocket friendFd_class(stoi(friend_recvfd));
             string kaitou = UP;
-            friendFd_class.sendMsg(kaitou + "\r" + command.m_uid + "已拒绝了您的好友申请." + GetNowTime());
+            friendFd_class.sendMsg(kaitou + "\r" + command.m_uid + "拒绝了您的好友申请.");
         }
     }else{
         cfd_class.sendMsg("had");
@@ -636,13 +681,13 @@ void CreateGroup(TcpSocket cfd_class, Command command){
     int len = command.m_option[0].size();
     vector<string> members;
     if(len < 4 ){
-        cfd_class.sendMsg("nofind");
+        cfd_class.sendMsg("nofind" + command.m_option[0]);
         return;
     }
     for(int i = 0; i + 4 <= len; i += 5){
         string member(command.m_option[0].begin() + i, command.m_option[0].begin() + i + 4);
-        if(!redis.hashexists(command.m_uid + "的好友列表", command.m_option[0])){
-            cfd_class.sendMsg("nofind");
+        if(!redis.hashexists(command.m_uid + "的好友列表", member)){
+            cfd_class.sendMsg("nofind" + member);
             return;
         }
         members.push_back(member);
@@ -657,11 +702,11 @@ void CreateGroup(TcpSocket cfd_class, Command command){
             continue;
         }else{
             redis.saddvalue("群聊集合", new_gid);
-            redis.hsetValue(new_gid + "基本信息", "群号", new_gid);
-            redis.hsetValue(new_gid + "基本信息", "群名", new_gid);
-            redis.hsetValue(new_gid + "基本信息", "创建时间", GetNowTime());
-            redis.hsetValue(new_gid + "基本信息", "群介绍", "暂无");
-            redis.hsetValue(new_gid + "基本信息", "群公告", "暂无");
+            redis.hsetValue(new_gid + "的基本信息", "群号", new_gid);
+            redis.hsetValue(new_gid + "的基本信息", "群名", new_gid);
+            redis.hsetValue(new_gid + "的基本信息", "创建时间", GetNowTime());
+            redis.hsetValue(new_gid + "的基本信息", "群介绍", "暂无");
+            redis.hsetValue(new_gid + "的基本信息", "群公告", "暂无");
             // 为群主建立群聊基本要素：群成员列表里的身份，自己的群聊里加上这个群，自己和群聊的消息队列加结尾
             redis.hsetValue(new_gid + "的群成员列表", command.m_uid, "群主");
             redis.hsetValue(command.m_uid + "的群聊列表", new_gid, new_gid);
@@ -670,12 +715,18 @@ void CreateGroup(TcpSocket cfd_class, Command command){
             for(auto member: members){
                 // 在初始成员的系统消息里写入加入通知
                 redis.lpush(member + "的通知消息", "您作为" + command.m_uid + "创建的群聊" + new_gid + "的初始群成员加入了该群聊." + GetNowTime());
-                // 初始成员的未读消息中的系统消息数量+1
-                string num = redis.gethash(member + "的未读消息", "系统消息");
-                redis.hsetValue(member + "的未读消息", "系统消息", to_string(stoi(num)+1));
+                // 初始成员的未读消息中的通知消息数量+1
+                string num = redis.gethash(member + "的未读消息", "通知消息");
+                redis.hsetValue(member + "的未读消息", "通知消息", to_string(stoi(num)+1));
                 redis.hsetValue(new_gid + "的群成员列表", member, "群成员");
                 redis.hsetValue(member + "的群聊列表", new_gid, new_gid);
                 redis.lpush(member + "--" + new_gid, "***************");
+                string online = redis.gethash(member, "在线状态");
+                if(online != "-1"){
+                    string friend_recvfd = redis.gethash(member, "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    friendFd_class.sendMsg("您被您的好友拉入了一个群聊.");
+                }
             }
             cfd_class.sendMsg(new_gid);
             return;
@@ -696,13 +747,33 @@ void ListGroup(TcpSocket cfd_class, Command command){
         cfd_class.sendMsg("end");
     }
 }
-void LookGroupApply(TcpSocket cfd_class, Command command){
+void AboutGroup(TcpSocket cfd_class, Command command){
+    // 判断群聊是否存在
+    if(!redis.sismember("群聊集合", command.m_option[0])){
+        cfd_class.sendMsg("nohave");
+        return;
+    }
+    // 判断用户是否已在该群聊里                                                    
+    int GroupNum = redis.hlen(command.m_uid + "的群聊列表"); 
+    if(GroupNum != 0){                                                       // 群聊数量不为0时，列表中可能已经有准好友,为0时可定没有，跳过此步骤
+        redisReply** g_uid =  redis.hkeys(command.m_uid + "的群聊列表");  // 得到群聊列表
+        for(int i = 0; i < GroupNum; i++){                                   // 遍历群聊列表，看看该群聊是否在里面
+            if(g_uid[i]->str == command.m_option[0]){                        // 该群聊已在列表中就告诉客户端，可以进行接下来操作
+                cfd_class.sendMsg("ok");
+                return;
+            }
+        }
+    }
+    cfd_class.sendMsg("no");// 遍历群聊列表没找到该群聊，说明用户不在里面，告诉用户返回
+    return;
+}
+void RequestList(TcpSocket cfd_class, Command command){
     // 判断查看的人是否为管理员或群主
     int num = redis.hlen(command.m_option[0] + "的群成员列表");
     redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
     for(int i = 0; i < num; i++){
         string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
-        if(position != "群主" && position != "管理员"){
+        if(position == "群成员"){
             cfd_class.sendMsg("cannot");
             return;
         }
@@ -720,5 +791,309 @@ void LookGroupApply(TcpSocket cfd_class, Command command){
         cfd_class.sendMsg("end");
     }
     return;
+}
+void PassApply(TcpSocket cfd_class, Command command){
+    // 是否为群主或者管理员
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position == "群成员"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    // 被操作人是否在群里
+    if(redis.hashexists(command.m_option[0] + "的群成员列表", command.m_option[1])){
+        cfd_class.sendMsg("had");
+        return;
+    }
+    // 申请列表里有没有这个人的申请
+    if(!redis.hashexists(command.m_option[0] + "的申请列表", command.m_option[1])){
+        cfd_class.sendMsg("nofind");
+        return;
+    }
+    // 如果申请列表里有申请者的申请,但是已经处理过了，就不能在处理,只能处理申请状态为未处理的申请
+    string apply_old = redis.gethash(command.m_option[0] + "的申请列表", command.m_option[1]);
+    string state(apply_old.end() - 11, apply_old.end());
+    if(state == "(已拒绝)" || state == "(已通过)"){
+        cfd_class.sendMsg("haddeal");
+        return;
+    }
+    // 获取这个人进群之前的群成员列表
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    // 群成员列表里加他并创建聊天队列
+    redis.hsetValue(command.m_option[0] + "的群成员列表", command.m_option[1], "群成员");
+    redis.lpush(command.m_option[1] + "--" + command.m_option[0], "**********");
+    // 在新成员的群聊列表里加上该群聊
+    redis.hsetValue(command.m_option[1], command.m_option[0], command.m_option[0]);
+    // 更改申请消息为已通过
+    string apply(apply_old.begin(), apply_old.end() - 11);
+    string pass= "(已通过)";
+    string apply_new = apply + pass;
+    redis.hsetValue(command.m_option[0] + "的申请列表", command.m_option[1], apply_new);
+    // 在申请者的通知消息里写入通过消息
+    redis.lpush(command.m_option[0] + "的通知消息", "群聊" + command.m_option[1] + "通过了您的入群申请." + GetNowTime());
+    // 申请者未读消息中的通知消息数量+1
+    string num1 = redis.gethash(command.m_option[0] + "的未读消息", "通知消息");
+    redis.hsetValue(command.m_option[0] + "的未读消息", "通知消息", to_string(stoi(num1) + 1));
+    // 如果申请者在线，给他的通知套接字一个提醒
+    string online = redis.gethash(command.m_option[0], "在线状态");
+    if(online != "-1"){
+        string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+        TcpSocket friendFd_class(stoi(friend_recvfd));
+        friendFd_class.sendMsg("群聊" + command.m_option[1] + "通过了您的入群申请.");
+    }
+    // 给这个人进群之前的群成员列表中的管理员和群主通知
+    for(int i = 0; i < num; i++){
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+            if(members[i]->str != command.m_uid){
+                string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
+                redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num0)+1));
+                redis.lpush(members[i]->str + static_cast<string>("的通知消息"), 
+                        "您管理的群聊" + command.m_option[0] + "同意了用户" + command.m_option[1] + "的入群申请.处理人：" + command.m_uid + GetNowTime());
+                // 如果群主或者管理员在线，给他的通知套接字一个提醒
+                string online = redis.gethash(members[i]->str, "在线状态");
+                if(online != "-1"){
+                    string friend_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    friendFd_class.sendMsg("您管理的群" + command.m_option[0] + "通过了一条入群申请.");
+                }
+            }
+        }
+    }
+    cfd_class.sendMsg("ok");
+    return;
+}
+void DenyApply(TcpSocket cfd_class, Command command){
+    // 是否为群主或者管理员
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position == "群成员"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    // 被操作人是否在群里
+    if(redis.hashexists(command.m_option[0] + "的群成员列表", command.m_option[1])){
+        cfd_class.sendMsg("had");
+        return;
+    }
+    // 申请列表里有没有这个人的申请
+    if(!redis.hashexists(command.m_option[0] + "的申请列表", command.m_option[1])){
+        cfd_class.sendMsg("nofind");
+        return;
+    }
+    // 如果申请列表里有申请者的申请,但是已经处理过了，就不能在处理,只能处理申请状态为未处理的申请
+    string apply_old = redis.gethash(command.m_option[0] + "的申请列表", command.m_option[1]);
+    string state(apply_old.end() - 11, apply_old.end());
+    if(state == "(已拒绝)" || state == "(已通过)"){
+        cfd_class.sendMsg("haddeal");
+        return;
+    }
+    // 获取这个人进群之前的群成员列表
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    // 更改申请消息为已通过
+    string apply(apply_old.begin(), apply_old.end() - 11);
+    string deny= "(已拒绝)";
+    string apply_new = apply + deny;
+    redis.hsetValue(command.m_option[0] + "的申请列表", command.m_option[1], apply_new);
+    // 在申请者的通知消息里写入通过消息
+    redis.lpush(command.m_option[0] + "的通知消息", "群聊" + command.m_option[1] + "拒绝了您的入群申请." + GetNowTime());
+    // 申请者未读消息中的通知消息数量+1
+    string num1 = redis.gethash(command.m_option[0] + "的未读消息", "通知消息");
+    redis.hsetValue(command.m_option[0] + "的未读消息", "通知消息", to_string(stoi(num1) + 1));
+    // 如果申请者在线，给他的通知套接字一个提醒
+    string online = redis.gethash(command.m_option[0], "在线状态");
+    if(online != "-1"){
+        string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+        TcpSocket friendFd_class(stoi(friend_recvfd));
+        friendFd_class.sendMsg("群聊" + command.m_option[1] + "拒绝了您的入群申请.");
+    }
+     // 用这个人进群之前的群成员列表，该群聊管理员和群主的未读消息中的通知消息数量 + 1
+    for(int i = 0; i < num; i++){
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+            if(members[i]->str != command.m_uid){
+                string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
+                redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num0)+1));
+                redis.lpush(members[i]->str + static_cast<string>("的通知消息"), 
+                        "您管理的群聊" + command.m_option[0] + "拒绝了用户" + command.m_option[1] + "的入群申请.处理人：" + command.m_uid + GetNowTime());
+                // 如果群主或者管理员在线，给他的通知套接字一个提醒
+                string online = redis.gethash(members[i]->str, "在线状态");
+                if(online != "-1"){
+                    string friend_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    friendFd_class.sendMsg("您管理的群" + command.m_option[0] + "拒绝了一条入群申请.");
+                }
+            }
+        }
+    }
+    cfd_class.sendMsg("ok");
+}
+void SetMember(TcpSocket cfd_class, Command command){
+    // 操作人是否为群主
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position != "群主"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    // 被操作人是否在群里
+    if(!redis.hashexists(command.m_option[0] + "的群成员列表", command.m_option[1])){
+        cfd_class.sendMsg("nohave");
+        return;
+    }
+    // 被操作人是否是群主
+    string position_old = redis.gethash(command.m_option[0] + "的群成员列表", command.m_option[1]);
+    if(position_old == "群主"){
+        cfd_class.sendMsg("cannot1");
+        return;
+    }
+    // 如果想要设置的职位不是群成员或者管理员，就告诉客户端
+    if(command.m_option[2] != "群成员" && command.m_option[2] != "管理员"){
+        cfd_class.sendMsg("cannot2");
+        return;
+    }
+    // 被操作人是否为已经为该职位
+    if(position_old == command.m_option[2]){
+        cfd_class.sendMsg("hadis");
+        return;
+    }
+    // 是否是群主转让群
+    if(command.m_option[2] == "群主"){
+        // 把自己改成群成员
+        redis.hsetValue(command.m_option[0] + "的群成员列表", command.m_uid, "群成员");
+        // 设置新群主
+        redis.hsetValue(command.m_option[0] + "的群成员列表", command.m_option[1], "群主");
+        // 通知新群主
+        string num = redis.gethash( command.m_option[1] + static_cast<string>("的未读消息"), "通知消息");
+        redis.hsetValue( command.m_option[1] + string("的未读消息"), "通知消息", to_string(stoi(num)+1));
+        redis.lpush(command.m_option[1] + static_cast<string>("的通知消息"), "您所在的群聊" + command.m_option[0] + "的群主" + 
+                    command.m_uid + "把群聊转让给了你" + GetNowTime());
+        // 如果新群主在线，给他的通知套接字一个提醒
+        string online = redis.gethash(command.m_option[1], "在线状态");
+        if(online != "-1"){
+            string friend_recvfd = redis.gethash(command.m_option[1], "通知套接字");
+            TcpSocket friendFd_class(stoi(friend_recvfd));
+            friendFd_class.sendMsg("您成为了群聊" + command.m_option[0] + "的新群主.");
+        }
+        cfd_class.sendMsg("ok");
+        return;
+    }
+    // 为被操作人设置新职位
+    redis.hsetValue(command.m_option[0] + "的群成员列表", command.m_option[1], "群主");
+    // 通知被操作人
+    string num = redis.gethash( command.m_option[1] + static_cast<string>("的未读消息"), "通知消息");
+    redis.hsetValue( command.m_option[1] + string("的未读消息"), "通知消息", to_string(stoi(num)+1));
+    redis.lpush(command.m_option[1] + static_cast<string>("的通知消息"), "您所在的群聊" + command.m_option[0] + "的群主" + 
+                command.m_uid + "将你设为管理员" + GetNowTime());
+    // 如果新群主在线，给他的通知套接字一个提醒
+    string online = redis.gethash(command.m_option[1], "在线状态");
+    if(online != "-1"){
+        string friend_recvfd = redis.gethash(command.m_option[1], "通知套接字");
+        TcpSocket friendFd_class(stoi(friend_recvfd));
+        friendFd_class.sendMsg("您被设为群聊" + command.m_option[0] + "的管理员.");
+    }
+    cfd_class.sendMsg("ok");
+    return;
+
+}
+void ExitGroup(TcpSocket cfd_class, Command command){
+    // 如果是群主，他无法退群
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position == "群主"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    // 群成员列表里删除此人，删除与该群聊的消息队列，此人的群聊列表里删除该群聊
+    redis.delhash(command.m_option[0] + "的群成员列表", command.m_uid);
+    redis.delKey(command.m_uid + "--" + command.m_option[0]);
+    redis.delhash(command.m_uid, command.m_option[0]);
+    // 这个人退出后，通知群里剩下的群主和管理员
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    for(int i = 0; i < num; i++){
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+            string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
+            redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num0)+1));
+            redis.lpush(members[i]->str + static_cast<string>("的通知消息"), "用户" + command.m_uid +
+                        "退出了您管理的群聊" + command.m_option[0] + GetNowTime());
+            // 如果群主或者管理员在线，给他的通知套接字一个提醒
+            string online = redis.gethash(members[i]->str, "在线状态");
+            if(online != "-1"){
+                string friend_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                TcpSocket friendFd_class(stoi(friend_recvfd));
+                friendFd_class.sendMsg("一名用户退出了您管理的群聊" + command.m_option[0]);
+            }
+        }
+    }
+    cfd_class.sendMsg("ok");
+}
+void DisplyMember(TcpSocket cfd_class, Command command){
+    int memberdNum = redis.hlen(command.m_option[0] + "的群成员列表");     // 获得群成员列表的成员数量
+    // 群成员数量肯定不为0，就遍历成员列表，根据在线状态发送要展示的内容,先展示在线的，再展示不在线的                                                       
+    redisReply **member_uid = redis.hkeys(command.m_option[0] + "的群成员列表");
+    for(int i = 0; i < memberdNum; i++){
+        string member_mark = redis.gethash(member_uid[i]->str, "昵称");
+        string isonline = redis.gethash(member_uid[i]->str, "在线状态");
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", member_uid[i]->str);
+        if(isonline != "-1"){
+            cfd_class.sendMsg(L_GREEN + member_mark + NONE + "(" + member_uid[i]->str + ")" + "————" + position);
+        }
+    }
+    for(int i = 0; i < memberdNum; i++){
+        string member_mark = redis.gethash(member_uid[i]->str, "昵称");
+        string isonline = redis.gethash(member_uid[i]->str, "在线状态");
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", member_uid[i]->str);
+        if(isonline == "-1"){
+            cfd_class.sendMsg(L_WHITE + member_mark + NONE + "(" + member_uid[i]->str + ")" + "————" + position);
+        }
+    }
+    cfd_class.sendMsg("end");
+}
+void RemoveMember(TcpSocket cfd_class, Command command){
+    // 操作者是否为群主或者管理员
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position == "群成员"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    string position0 = redis.gethash(command.m_option[0] + "的群成员列表", command.m_option[1]);
+    if(position0 != "群成员"){
+        cfd_class.sendMsg("cannot0");
+        return;
+    }
+    // 被操作人是否在群里
+    if(redis.hashexists(command.m_option[0] + "的群成员列表", command.m_option[1])){
+        cfd_class.sendMsg("had");
+        return;
+    }
+    // 群成员列表里删除此人，删除与该群聊的消息队列，此人的群聊列表里删除该群聊
+    redis.delhash(command.m_option[0] + "的群成员列表", command.m_option[1]);
+    redis.delKey(command.m_option[1] + "--" + command.m_option[0]);
+    redis.delhash(command.m_option[1], command.m_option[0]);
+    // 这个人退出后，通知群里剩下的群主和管理员
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    for(int i = 0; i < num; i++){
+        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+            if(members[i]->str != command.m_uid){
+                string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
+                redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num0)+1));
+                redis.lpush(members[i]->str + static_cast<string>("的通知消息"),  "您管理的群聊" +
+                             command.m_option[0] + "的" + position + command.m_uid + "将用户" + 
+                             command.m_option[1] + "移出了群聊" + GetNowTime());
+                // 如果群主或者管理员在线，给他的通知套接字一个提醒
+                string online = redis.gethash(members[i]->str, "在线状态");
+                if(online != "-1"){
+                    string friend_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                    TcpSocket friendFd_class(stoi(friend_recvfd));
+                    friendFd_class.sendMsg("一名用户被移出了您管理的群聊" + command.m_option[0]);
+                }
+            }
+        }
+    }
+}
+void InfoXXXX(TcpSocket cfd_class, Command command){
+    
 }
 #endif 
