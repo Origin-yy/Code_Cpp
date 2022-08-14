@@ -40,10 +40,10 @@
 // #define   49 设置默认背景色
 // #define   50-89 没用
 // #define   90-109 又是设置前景背景的，比之前的颜色浅
-#define   UP         "\033[1A"     // 光标上移n行
-#define   DOWN       "\033[1B"     // 光标下移n行
-#define   RIGHT      "\033[1C"     // 光标右移n行
-#define   LEFT       "\033[1D"     // 光标左移n行
+#define   UP         "\033[1A"     // 光标上移1行
+#define   DOWN       "\033[1B"     // 光标下移1行
+#define   RIGHT      "\033[1C"     // 光标右移1行
+#define   LEFT       "\033[1D"     // 光标左移1行
 //#define   set(x,y)   "\033[y;xH"   // 设置光标位置
 #define   CLEAR      "\033[2J"     // 清屏
 #define   CLEAREND   "\033[K"      // 清除从光标到行尾的内容

@@ -289,12 +289,25 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
         string msg;
         while(true){
             //cout << "请输入您想发送的消息：" << endl; 
+            cin.sync();
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
             if(msg == "#"){
                 Command command_exit(command.m_uid,EXITCHAT,{"空"});
                 ExitChatFriend(cfd_class, command_exit);
                 break;
+            }
+            // 消息中不能含有空白
+            bool ok = true;
+            for(auto c : msg){
+                if(isspace(c)){
+                    ok = false;
+                    break;
+                }
+            }
+            if(ok == false){
+                cout << UP << "消息中不能含有空白" << endl;
+                continue;
             }
             // 把消息包装好，让服务器转发
             Command command_msg(command.m_uid, FRIENDMSG, {command.m_option[0], msg});
@@ -307,6 +320,8 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             if(check == "close"){
                 cout << "服务器已关闭." << endl;
                 exit(0);
+            }else if(check == "ok"){
+                continue;
             }else if(check == "nohave"){
                 cout << "很遗憾,该用户已经和您解除了好友关系(输入#退出)." << endl;
                 cout << "莫愁前路无知己，天下谁人不识君." << endl;
@@ -349,13 +364,26 @@ bool ChatGroup(TcpSocket cfd_class, Command command){
         // 给好友发送消息,‘#‘退出聊天，并更改自己的聊天对象
         string msg;
         while(true){
-            //cout << "请输入您想发送的消息：" << endl; 
+            // cout << "请输入您想发送的消息：" << endl; 
+            cin.sync();
             getline(cin,msg);
             // 用户想退出聊天界面，送请求并等待服务器处理完毕
             if(msg == "#"){
                 Command command_exit(command.m_uid,EXITGROUPCHAT,{"空"});
                 ExitChatGroup(cfd_class, command_exit);
                 break;
+            }
+            // 消息中不能含有空白
+            bool ok = true;
+            for(auto c : msg){
+                if(isspace(c)){
+                    ok = false;
+                    break;
+                }
+            }
+            if(ok == false){
+                cout << "消息中不能含有空白" << endl;
+                continue;
             }
             // 把消息包装好，让服务器转发
             Command command_msg(command.m_uid, GROUPMSG, {command.m_option[0], msg});
@@ -368,6 +396,8 @@ bool ChatGroup(TcpSocket cfd_class, Command command){
             if(check == "close"){
                 cout << "服务器已关闭." << endl;
                 exit(0);
+            }else if(check == "ok"){
+                continue;
             }else if(check == "nohave"){
                 cout << "很遗憾,您已被群主移出了该群聊(输入#退出)." << endl;
                 cout << "道不同，不相为谋." << endl;
@@ -377,6 +407,26 @@ bool ChatGroup(TcpSocket cfd_class, Command command){
     return true;
 }
 bool ExitChatFriend(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());  // 发送退出聊天请求
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        system("clear");
+        cout << "已退出聊天" << endl;
+        return true;
+    }else if (check == "no"){
+        cout << L_WHITE << "无效的操作，请重新输入." << NONE << endl;
+        return false;
+    }
+    return false;
+}
+bool ExitChatGroup(TcpSocket cfd_class, Command command){
     int ret = cfd_class.sendMsg(command.To_Json());  // 发送退出聊天请求
     if(ret == 0 || ret == -1){
         cout << "服务器已关闭." << endl; 
@@ -681,7 +731,10 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
         else if(input == "exit"){
             string option0 = command.m_option[0];
             Command command1(command.m_uid, EXITGROUP, {option0});
-            ExitGroup(cfd_class, command1);
+            if(ExitGroup(cfd_class, command1) == true){
+                cout << "您已退出该群聊." << endl;
+                break;
+            }
         }
         else if(input == "members"){
             string option0 = command.m_option[0];
@@ -839,7 +892,7 @@ bool ExitGroup(TcpSocket cfd_class, Command command){
         return false;
     }else if(check == "ok"){
         cout << "您已退出该群聊." << endl;
-        return false;
+        return true;
     }else{
         cout << "其他错误." << endl;
         return false;
