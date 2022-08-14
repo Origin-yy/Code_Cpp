@@ -36,7 +36,9 @@ using namespace std;
 #define DISPLAYMEMBER   26
 #define REMOVEMEMBER    27
 #define INFOXXXX        28
-
+#define CHATGROUP       29
+#define GROUPMSG        30
+#define EXITGROUPCHAT   31
 string get_login();
 string get_uid();
 string get_pwd();
@@ -207,9 +209,14 @@ Command get_command(string my_uid){
             Command command(my_uid, LISTGROUP, {option0});
             return command;
         }
-        else if(input.find("chat-") == 0 && input.size() > 5){
+        else if(input.find("chat-") == 0 && input.size() == 9){
             string option0(input.begin() + 5, input.end());
             Command command(my_uid, CHATFRIEND, {option0});
+            return command;
+        }
+        else if(input.find("chat-") == 0 && input.size() == 8){
+            string option0(input.begin() + 5, input.end());
+            Command command(my_uid, CHATGROUP, {option0});
             return command;
         }
         else if(input.find("shield-") == 0 && input.size() > 7){

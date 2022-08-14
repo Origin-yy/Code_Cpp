@@ -70,6 +70,9 @@ int main(){
         case CHATFRIEND :
             ChatFriend(cfd_class, command);
             break; 
+        case CHATGROUP :
+            ChatGroup(cfd_class, command);
+            break; 
         case EXITCHAT :
             ExitChatFriend(cfd_class, command);
             break; 

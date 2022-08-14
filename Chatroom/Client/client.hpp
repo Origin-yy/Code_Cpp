@@ -21,7 +21,9 @@ bool AddGroup(TcpSocket cfd_class, Command command);
 bool AgreeAddFriend(TcpSocket cfd_class, Command command);
 bool ListFirHistory(TcpSocket cfd_class, Command command);
 bool ChatFriend(TcpSocket cfd_class, Command command);
+bool ChatGroup(TcpSocket cfd_class, Command command);
 bool ExitChatFriend(TcpSocket cfd_class, Command command);
+bool ExitChatGroup(TcpSocket cfd_class, Command command);
 bool ShieldFriend(TcpSocket cfd_class, Command command);
 bool DeleteFriend(TcpSocket cfd_class, Command command);
 bool Restorefriend(TcpSocket cfd_class, Command command);
@@ -283,7 +285,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 break;
             }
         }
-        // 给好友发送消息,^[ (ESC） 退出聊天，并更改自己的聊天对象
+        // 给好友发送消息,'#'退出聊天，并更改自己的聊天对象
         string msg;
         while(true){
             //cout << "请输入您想发送的消息：" << endl; 
@@ -308,6 +310,67 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             }else if(check == "nohave"){
                 cout << "很遗憾,该用户已经和您解除了好友关系(输入#退出)." << endl;
                 cout << "莫愁前路无知己，天下谁人不识君." << endl;
+            }
+        }
+    }
+    return true;
+}
+bool ChatGroup(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());  // 发送聊天请求
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }            
+    string check = cfd_class.recvMsg();        // 检查回复
+    if(check == "close"){
+        cout << "服务器已关闭." << endl; 
+        exit(0);
+    }else if(check == "none"){
+        cout << "您还没有加入任何群聊." << endl;
+        return false;
+    }else if(check == "nofind"){
+        cout << "未找到该群聊." << endl;
+        return false;
+    }
+    // 有这个群聊就打印历史聊天记录
+    else if(check == "have"){
+        string HistoryMsg;
+        while(true){
+            HistoryMsg = cfd_class.recvMsg();
+            if(HistoryMsg == "close" || HistoryMsg == "-1"){
+                cout << "服务器已关闭." << endl;
+                exit(0);
+            } 
+            cout << HistoryMsg << endl;
+            if(HistoryMsg == "以上为历史聊天记录"){
+                break;
+            }
+        }
+        // 给好友发送消息,‘#‘退出聊天，并更改自己的聊天对象
+        string msg;
+        while(true){
+            //cout << "请输入您想发送的消息：" << endl; 
+            getline(cin,msg);
+            // 用户想退出聊天界面，送请求并等待服务器处理完毕
+            if(msg == "#"){
+                Command command_exit(command.m_uid,EXITGROUPCHAT,{"空"});
+                ExitChatGroup(cfd_class, command_exit);
+                break;
+            }
+            // 把消息包装好，让服务器转发
+            Command command_msg(command.m_uid, GROUPMSG, {command.m_option[0], msg});
+            int ret = cfd_class.sendMsg(command_msg.To_Json());
+            if(ret == 0 || ret == -1){
+                cout << "服务器已关闭." << endl; 
+                exit(0);
+            }
+            string check = cfd_class.recvMsg();
+            if(check == "close"){
+                cout << "服务器已关闭." << endl;
+                exit(0);
+            }else if(check == "nohave"){
+                cout << "很遗憾,您已被群主移出了该群聊(输入#退出)." << endl;
+                cout << "道不同，不相为谋." << endl;
             }
         }
     }
@@ -600,11 +663,11 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
             Command command1(command.m_uid, DENYAPPLY, {option0, option1});
             DenyApply(cfd_class, command1);
         }
-        else if(input.find("set-") == 0 && input.size() == 15){
+        else if(input.find("set-") == 0 && input.size() >= 15 && input.size() <= 16){
             string option0 = command.m_option[0];
             string option1(input.begin() + 4, input.begin() + 8);
             string option2(input.begin() + 9, input.end());
-            if(option2 == "群主"){
+            if(option2 == "leader"){
                 cout << L_WHITE << "此操作成功的话会使您失去群主身份，确认继续？(y/n)" << NONE << endl;
                 string state;
                 getline(cin, state);
@@ -619,7 +682,6 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
             string option0 = command.m_option[0];
             Command command1(command.m_uid, EXITGROUP, {option0});
             ExitGroup(cfd_class, command1);
-            break;
         }
         else if(input == "members"){
             string option0 = command.m_option[0];
@@ -662,7 +724,7 @@ bool RequestList(TcpSocket cfd_class, Command command){
             return false;
         }else if(apply == "end"){
             cout << "入群申请展示完毕." << endl;
-            exit (0);
+            return true;
         }else {
             cout << apply << endl;
         }
@@ -815,6 +877,9 @@ bool RemoveMember(TcpSocket cfd_class, Command command){
         exit (0);
     }else if(check == "ok"){
         cout << "已将其移出群聊." << endl;
+        return false;
+    }else if(check == "no"){
+        cout << "该用户不在此群聊." << endl;
         return false;
     }else if(check == "cannot"){
         cout << "您没有此权限." << endl;

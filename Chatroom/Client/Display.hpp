@@ -43,7 +43,7 @@ void display_help(){
 void display_menu2(){
         cout<< L_YELLOW << "***************聊天室***************" << NONE << endl
         << L_YELLOW "*" << NONE << L_WHITE << "-------------群聊相关-------------" << NONE << L_WHITE "*" NONE << endl
-        << L_YELLOW "*" << NONE << L_BLUE << "------------成员列表(member)------" << NONE << L_YELLOW "*" NONE << endl
+        << L_YELLOW "*" << NONE << L_BLUE << "------------成员列表(members)-----" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------申请列表(request)-----" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------通过申请(pass-)-------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------拒绝申请(deny-)-------" << NONE << L_YELLOW "*" NONE << endl
