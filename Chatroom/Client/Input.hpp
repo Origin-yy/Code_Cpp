@@ -39,6 +39,8 @@ using namespace std;
 #define CHATGROUP       29
 #define GROUPMSG        30
 #define EXITGROUPCHAT   31
+#define SENDFILE        32
+#define RECVFILE        33
 
 string get_login();
 string get_uid();

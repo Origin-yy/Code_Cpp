@@ -41,6 +41,8 @@
 #define CHATGROUP       29
 #define GROUPMSG        30
 #define EXITGROUPCHAT   31
+#define SENDFILE        32
+#define RECVFILE        33
 
 using namespace std;
 extern Redis redis;
@@ -85,6 +87,8 @@ void ExitGroup(TcpSocket cfd_class, Command command);
 void DisplyMember(TcpSocket cfd_class, Command command);
 void RemoveMember(TcpSocket cfd_class, Command command);
 void InfoXXXX(TcpSocket cfd_class, Command command);
+void SendFile(TcpSocket cfd_class, Command command);
+void RecvFile(TcpSocket cfd_class, Command command);
 
 void my_error(const char* errorMsg) {
     cout << errorMsg << endl;
@@ -198,6 +202,12 @@ void taskfunc(void *arg){
             break;
         case INFOXXXX :
             InfoXXXX(cfd_class, command);
+            break;
+        case SENDFILE :
+            SendFile(cfd_class, command);
+            break;
+        case RECVFILE :
+            RecvFile(cfd_class, command);
             break;
         }
 }
@@ -1228,5 +1238,11 @@ void RemoveMember(TcpSocket cfd_class, Command command){
 }
 void InfoXXXX(TcpSocket cfd_class, Command command){
     return;
+}
+void SendFile(TcpSocket cfd_class, Command command){
+    redis.lpush(command.m_uid + "发给" + command.m_option[0] + "的文件队列", )
+}
+void RecvFile(TcpSocket cfd_class, Command command){
+
 }
 #endif 

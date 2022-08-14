@@ -2,6 +2,7 @@
 #include "Display.hpp"
 #include "Input.hpp"
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <pthread.h>
 #include <sys/types.h>
@@ -297,7 +298,44 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 ExitChatFriend(cfd_class, command_exit);
                 break;
             }
-            // 消息中不能含有空白
+            // 如果是发文件
+            if(msg == "$"){
+                int len;
+                string FilePath;
+                FILE *fq;
+                char buf[4096];
+                memset(buf, '\0', sizeof(buf));
+                cout << "请输入您想发送的文件绝对路径：" << endl;
+                cin.sync();
+                getline(cin, FilePath);
+                bool ok = true;
+                for(auto c : msg){
+                    if(isspace(c)){
+                        ok = false;
+                        break;
+                    }
+                }
+                if(ok == false){
+                    cout << UP << "文件路径中不能含有空白" << endl;
+                    continue;
+                }
+                if((fq = fopen(FilePath.c_str(),"rb")) == nullptr){
+                    cout << "文件打开失败或不存在该文件." << endl;
+                    continue;
+                }
+                Command comamnd_filepath(command.m_uid, SENDFILE, {command.m_option[0], FilePath});
+                cfd_class.sendMsg(comamnd_filepath.To_Json());
+                while (true) {
+                    len = fread(buf, 1, sizeof(buf), fq);
+                    Command comamnd_file(command.m_uid, SENDFILE, {command.m_option[0], buf});
+                    cfd_class.sendMsg(comamnd_file.To_Json());
+                    if(len < 4096){
+                        fclose(fq);
+                        break;
+                    }
+                }
+            }
+            // 不是文件，消息中不能含有空白
             bool ok = true;
             for(auto c : msg){
                 if(isspace(c)){
