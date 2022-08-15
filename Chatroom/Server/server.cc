@@ -10,8 +10,11 @@
 #include <sys/epoll.h>
 #include <bits/types/time_t.h>
 
+#define LOCALPORT 6666
+
 Redis redis;
 using namespace std;
+
 
 int main(){
     // 连接redis服务端
@@ -28,7 +31,7 @@ int main(){
     TcpServer sfd_class;                             // 创建服务器的socket
     map<string, int> uid_cfd;                        // 一个uid对应一个cfd的表
     int ret;                                         // 检测返回值
-    ret = sfd_class.setListen(6666);           // 设置监听返回监听符.内部报错
+    ret = sfd_class.setListen(LOCALPORT);           // 设置监听返回监听符.内部报错
     if(ret == -1) {exit(1);}
 
     // 创建epoll实例，并把listenfd加进去，监视可读事件

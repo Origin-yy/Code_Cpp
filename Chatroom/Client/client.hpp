@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <cstdlib>
 #include <unistd.h>
+#include <fcntl.h>
 
 void my_error(const char* errorMsg);
 void *recvfunc(void* arg);
@@ -300,14 +301,17 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
             }
             // 如果是发文件
             if(msg == "$"){
-                int len;
                 string FilePath;
-                FILE *fq;
+                int fd;
                 char buf[4096];
                 memset(buf, '\0', sizeof(buf));
-                cout << "请输入您想发送的文件绝对路径：" << endl;
+                cout << "请输入您想发送的文件绝对路径(#取消)：" << endl;
                 cin.sync();
                 getline(cin, FilePath);
+                if(FilePath == "#"){
+                    cout << "已取消发送." << endl;
+                    continue;
+                }
                 bool ok = true;
                 for(auto c : msg){
                     if(isspace(c)){
@@ -319,21 +323,25 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << UP << "文件路径中不能含有空白" << endl;
                     continue;
                 }
-                if((fq = fopen(FilePath.c_str(),"rb")) == nullptr){
+                if((fd = open(FilePath.c_str(), O_RDONLY)) < 0){
                     cout << "文件打开失败或不存在该文件." << endl;
                     continue;
                 }
-                Command comamnd_filepath(command.m_uid, SENDFILE, {command.m_option[0], FilePath});
-                cfd_class.sendMsg(comamnd_filepath.To_Json());
                 while (true) {
-                    len = fread(buf, 1, sizeof(buf), fq);
-                    Command comamnd_file(command.m_uid, SENDFILE, {command.m_option[0], buf});
+                    int len = read(fd, buf, 4096);
+                    if(len == -1){
+                        cout << "read() failed." << endl;
+                        break; 
+                    }
+                    // buf[4096] = '\0';
+                    string buffer(buf, len);
+                    Command comamnd_file(command.m_uid, SENDFILE, {command.m_option[0], FilePath, buffer});
                     cfd_class.sendMsg(comamnd_file.To_Json());
                     if(len < 4096){
-                        fclose(fq);
                         break;
                     }
                 }
+                continue;
             }
             // 不是文件，消息中不能含有空白
             bool ok = true;
@@ -756,7 +764,7 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
             string option1(input.begin() + 4, input.begin() + 8);
             string option2(input.begin() + 9, input.end());
             if(option2 == "leader"){
-                cout << L_WHITE << "此操作成功的话会使您失去群主身份，确认继续？(y/n)" << NONE << endl;
+                cout << L_WHITE << "此操作成功的话会使您失去群主身份，是否继续？(y/n)" << NONE << endl;
                 string state;
                 getline(cin, state);
                 if(state != "y"){
@@ -770,6 +778,12 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
             string option0 = command.m_option[0];
             Command command1(command.m_uid, EXITGROUP, {option0});
             if(ExitGroup(cfd_class, command1) == true){
+                cout << L_WHITE << "您确定要退出群聊吗？(y/n)" << NONE << endl;
+                string state;
+                getline(cin, state);
+                if(state != "y"){
+                    continue;
+                }
                 cout << "您已退出该群聊." << endl;
                 break;
             }

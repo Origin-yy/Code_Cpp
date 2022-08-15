@@ -3,6 +3,9 @@
 #include <cstddef>
 #include <pthread.h>
 
+#define SERVER_IP     "127.0.0.1"
+#define SERVER_PORT    6666
+
 using json = nlohmann::json;
 
 int main(){
@@ -14,7 +17,7 @@ int main(){
     Command command;       // 要发送的命令类
     TcpSocket cfd_class("recv");   // 本客户端的套接字类（交互套接字和通信套接字）
     // 连接服务器
-    ret = cfd_class.connectToHost("127.0.0.1", 6666);
+    ret = cfd_class.connectToHost(SERVER_IP, SERVER_PORT);
     if(ret == -1){
         my_error("connect()");
         exit(0);
