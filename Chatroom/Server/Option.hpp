@@ -1050,7 +1050,7 @@ void DenyApply(TcpSocket cfd_class, Command command){
     }
     cfd_class.sendMsg("ok");
 }
-void SetMember(TcpSocket cfd_class, Command command){
+void SetMember(TcpSocket cfd_class, Command command){+++++++++++++++++++++
     // 操作人是否为群主
     string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
     if(position != "群主"){
