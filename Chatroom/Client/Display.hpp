@@ -24,8 +24,8 @@ void display_menu1(){
         << L_YELLOW "*" << NONE << L_BLUE << "------------群聊列表(list-g)------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------添加好友/群聊(add-)---" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------创建群聊(create)------" << NONE << L_YELLOW "*" NONE << endl
-        << L_YELLOW "*" << NONE << L_BLUE << "------------关于群聊(about)------" << NONE << L_YELLOW "*" NONE << endl
-        << L_YELLOW "*" << NONE << L_BLUE << "------------功能菜单(menu)---------" << NONE << L_YELLOW "*" NONE << endl
+        << L_YELLOW "*" << NONE << L_BLUE << "------------关于群聊(about)-------" << NONE << L_YELLOW "*" NONE << endl
+        << L_YELLOW "*" << NONE << L_BLUE << "------------功能菜单(menu)--------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------帮助(help)------------" << NONE << L_YELLOW "*" NONE << endl
 
         << L_YELLOW "*" << NONE << L_WHITE << "-------------好友相关-------------" << NONE << L_WHITE "*" NONE << endl

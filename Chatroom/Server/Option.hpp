@@ -384,7 +384,7 @@ void AgreeAddFriend(TcpSocket cfd_class, Command command){
         }
         // 更改自己这边的申请者的申请状态为已通过
         string pass = "(已通过)";
-        string newmsg(msg.end() - 11,msg.end());
+        string newmsg(msg.begin(),msg.end() - 11);
         string Newmsg = newmsg + pass;
         redis.hsetValue(command.m_uid + "的系统消息", command.m_option[0], Newmsg);
         // 同意者的系统消息数量-1
@@ -1050,7 +1050,7 @@ void DenyApply(TcpSocket cfd_class, Command command){
     }
     cfd_class.sendMsg("ok");
 }
-void SetMember(TcpSocket cfd_class, Command command){+++++++++++++++++++++
+void SetMember(TcpSocket cfd_class, Command command){
     // 操作人是否为群主
     string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
     if(position != "群主"){

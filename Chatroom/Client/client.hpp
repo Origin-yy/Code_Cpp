@@ -565,17 +565,17 @@ bool NewMessage(TcpSocket cfd_class, Command command){
         exit (0);
     }
     while(true){
-        string Friend = cfd_class.recvMsg();
-        if(Friend == "end"){
+        string oneline = cfd_class.recvMsg();
+        if(oneline == "end"){
             break;
-        }else if(Friend == "none"){
+        }else if(oneline == "none"){
             cout << "您当前没有未读消息" << endl;
             break;
-        }else if(Friend == "close"){
+        }else if(oneline == "close"){
             cout << "服务器已关闭." << endl;
             exit (0);
         }else {
-            cout << Friend << endl;
+            cout << oneline << endl;
         }
     }
     return true;

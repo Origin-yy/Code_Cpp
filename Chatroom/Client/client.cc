@@ -47,12 +47,19 @@ int main(){
     }
     cout << L_GREEN << "欢迎使用本聊天室." << NONE << endl;
     bool display = true;
+    // 循环展示未读消息界面，并获取用户输入，进行交互，展示服务器回复
     while(true){
-        Command command0(my_uid, NEWMESSAGE, {"newmessage"});
-        if(display)
+        // 如果上一次的操作不是展示未读消息界面，就在每一次循环获取用户输入开始前展示未读消息，是的话就不展示
+        if(display){
+            Command command0(my_uid, NEWMESSAGE, {"newmessage"});
+            cout << L_YELLOW << "\n********************" << NONE << endl;
             NewMessage(cfd_class, command0);
+            cout << L_YELLOW << "********************" << NONE << endl;
+        }
         display = true;
+        // 获取操作，清空界面，获得服务器回复并展示回复
         command = get_command(my_uid);
+        system("clear");
         switch (command.m_flag) {
         case QUIT :
             cfd_class.sendMsg("quit");
@@ -89,7 +96,9 @@ int main(){
             Restorefriend(cfd_class, command);
             break;
         case NEWMESSAGE :
+        cout << L_YELLOW << "\n********************" << NONE << endl;
             NewMessage(cfd_class, command);
+        cout << L_YELLOW << "********************" << NONE << endl;
             display = false;
             break;
         case LOOKSYSTEM :
