@@ -1245,18 +1245,23 @@ void InfoXXXX(TcpSocket cfd_class, Command command){
 void SendFile(TcpSocket cfd_class, Command command){
     int fd;
     int n = command.m_option[2].size();
-    string buffer;
+    string buffer = command.m_option[2];
     string FilePath = command.m_option[1];
-    string File = "/home/yuanye/Code/Code_Cpp/Chatroom/" + FilePath;
-    cout << File << endl;
-    if((fd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, 066)) < 0){
+    string filename(FilePath,FilePath.rfind("/") + 1);
+    string File = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + filename;
+    cout << "接收到的文件存储位置为："<<  File << endl;
+    if((fd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
         cout << "文件打开失败." << endl;
         exit(0);
     }
-    write(fd, buffer.c_str(), sizeof(buffer));
+    int r = write(fd, buffer.c_str(), n);
+    if(r < 0){
+        cout << "write() failed." << endl;
+        exit(0);
+    }
     if(n < 4096){
         // 将新的消息加入到我对他的消息队列
-        string msg0 = "我发送了一个文件：" + command.m_option[1] + ".........." + GetNowTime();
+        string msg0 = "我发送了一个文件：" + filename + ".........." + GetNowTime();
         redis.lpush(command.m_uid + "--" + command.m_option[0], msg0);
         // 当前聊天界面展示我的消息
         string my_recvfd = redis.gethash(command.m_uid, "通知套接字");
@@ -1270,7 +1275,7 @@ void SendFile(TcpSocket cfd_class, Command command){
         }
         // 没有被屏蔽，消息加到他对我的消息队列，并给相应通知
         string name0 = redis.gethash(command.m_option[0] + "的好友列表", command.m_uid);  // 得到好友給我的备注
-        string msg1 = name0 + "发送了一个文件：" + command.m_option[1] + ".........." + GetNowTime();   
+        string msg1 = name0 + "发送了一个文件：" + filename + ".........." + GetNowTime();   
         redis.lpush(command.m_option[0] + "--" + command.m_uid, msg1);  // 把消息加入的好友的聊天队列
 
         // 如果好友把自己屏蔽的话，啥都不做，如果没有被屏蔽，就进行下面的操作：
@@ -1300,12 +1305,13 @@ void SendFile(TcpSocket cfd_class, Command command){
             TcpSocket friendFd_class(stoi(friend_recvfd));
             friendFd_class.sendMsg(command.m_uid + "发来了一个文件");
         }
-        close(fd);
         redis.lpush(command.m_uid + "发给" + command.m_option[0] + "的文件", FilePath);
+
+        cfd_class.sendMsg("ok");
     }
-    cfd_class.sendMsg("ok");
+    close(fd);
 }
 void RecvFile(TcpSocket cfd_class, Command command){
-
+    
 }
 #endif 

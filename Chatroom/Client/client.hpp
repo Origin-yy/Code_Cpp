@@ -327,10 +327,14 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << "文件打开失败或不存在该文件." << endl;
                     continue;
                 }
+                // 打开文件后循环发送文件内容，每次4096字节，直到发完
+                cout << "文件上传中..." << endl;
+                bool success = true;
                 while (true) {
                     int len = read(fd, buf, 4096);
                     if(len == -1){
                         cout << "read() failed." << endl;
+                        success = false;
                         break; 
                     }
                     // buf[4096] = '\0';
@@ -341,6 +345,10 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                         break;
                     }
                 }
+                if(success == true)
+                    cout << "文件上传完毕." << endl;
+                else
+                    cout << "文件上传失败." << endl;
                 continue;
             }
             // 不是文件，消息中不能含有空白
