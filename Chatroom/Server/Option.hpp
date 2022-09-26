@@ -1243,23 +1243,33 @@ void InfoXXXX(TcpSocket cfd_class, Command command){
     return;
 }
 void SendFile(TcpSocket cfd_class, Command command){
-    int fd;
+    int filefd;
     int n = command.m_option[2].size();
     string buffer = command.m_option[2];
     string FilePath = command.m_option[1];
-    string filename(FilePath,FilePath.rfind("/") + 1);
-    string File = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + filename;
-    cout << "接收到的文件存储位置为："<<  File << endl;
-    if((fd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
-        cout << "文件打开失败." << endl;
-        exit(0);
+    string filename(FilePath,FilePath.rfind("/") + 1); 
+    string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_uid + "-" + command.m_option[0];
+    // 如果是刚开始发文件，就先创建目录，并返回
+    if(command.m_option[2] == "begin"){
+        string cmd = "777 " + filepath;
+        system(string("mkdir -m " + cmd).c_str());
+        cout << "目录创建成功." << endl;
+        return;
     }
-    int r = write(fd, buffer.c_str(), n);
+    // 接收文件内容
+    string File = filepath + "/" + filename;
+    cout << "接收到的文件存储位置为："<<  File << endl;
+    if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
+        cout << "文件打开失败." << endl;
+        cfd_class.sendMsg("no");
+    }
+    int r = write(filefd, buffer.c_str(), n);
     if(r < 0){
         cout << "write() failed." << endl;
-        exit(0);
+        cfd_class.sendMsg("no");
     }
-    if(n < 4096){
+    //文件接收完毕的处理
+    if(command.m_option[2] == "end"){
         // 将新的消息加入到我对他的消息队列
         string msg0 = "我发送了一个文件：" + filename + ".........." + GetNowTime();
         redis.lpush(command.m_uid + "--" + command.m_option[0], msg0);
@@ -1306,10 +1316,9 @@ void SendFile(TcpSocket cfd_class, Command command){
             friendFd_class.sendMsg(command.m_uid + "发来了一个文件");
         }
         redis.lpush(command.m_uid + "发给" + command.m_option[0] + "的文件", FilePath);
-
-        cfd_class.sendMsg("ok");
     }
-    close(fd);
+    cfd_class.sendMsg("ok");
+    close(filefd);
 }
 void RecvFile(TcpSocket cfd_class, Command command){
     
