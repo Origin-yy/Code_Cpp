@@ -1265,14 +1265,13 @@ void SendFile(TcpSocket cfd_class, Command command){
         cout << "文件打开失败." << endl;
     }
     char buf[4096];
-    unsigned long len = 0;
     cout << "File:" << File << endl;
     cout << "size:" << size << endl;
     while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
-        unsigned long sum = write(filefd, buf, 4096);
-        len += sum;
-        cout << "len:" << len << endl;
-        if(len == size){
+        unsigned long sum = write(filefd, buf, n);
+        size -= sum;
+        cout << "size:" << size << endl;
+        if(size < 4096){
             break;
         }
     }
