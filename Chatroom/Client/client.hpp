@@ -312,7 +312,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 int file_fd;
                 char buf[4096];
                 memset(buf, '\0', sizeof(buf));
-                cout << "请输入您想发送的文件绝对路径(#取消)：" << endl;
+                cout << L_WHITE << "请输入您想发送的文件绝对路径(#取消)：" << NONE << endl;
                 cin.sync();
                 getline(cin, FilePath);
                 if(FilePath == "#"){
@@ -356,18 +356,17 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     continue;
                 }
                 bool success = true;
-                off_t offset = 0;
-                cout << "文件上传中..." << endl;
+                cout << L_WHITE << "文件上传中..." << NONE << endl;
                 while(true){
                     string rar(512, '#');
                     string head = filepath + rar;
                     char* buffer_t = new char[4097];
-                    memset(buffer_t, '\0', 4097);
-                    ssize_t count = read(file_fd, buffer_t, 4096);
+                    memset(buffer_t, 0, 4097);
+                    int count = read(file_fd, buffer_t, 4096);
+                    if(count == 0){
+                        break;
+                    }
                     string buffer(buffer_t, 0, count);
-                    cout << buffer_t << endl;
-                    cout << buffer << endl;
-                    cout << "发送的内容：" << (string(head, 0, 512) + buffer).c_str() << endl;
                     int n = cfd_class.sendMsg((string(head, 0, 512) + buffer).c_str());
                     if(n < 0){
                         success = false;
@@ -379,7 +378,6 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                         cout << "服务器已关闭." << endl; 
                         exit(0);
                     }
-                    offset += count;
                     delete[] buffer_t;
                     // 确认服务器端已经写入文件内容
                     string check = cfd_class.recvMsg();
@@ -392,24 +390,26 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     }
                 }
                 if(success == true)
-                    cout << "文件上传完毕." << endl;
+                    cout << L_GREEN << "文件上传完毕." << NONE << endl;
                 else
-                    cout << "文件上传失败." << endl;
-                continue;
+                    cout << L_RED << "文件上传失败." << NONE << endl;
                 close(file_fd);
                 // 所有文件内容已经传输完毕，告诉服务器端进行收尾工作
-                Command comamnd_file_end(command.m_uid, SENDFILE, {command.m_option[0], filename, "end"});
-                ret = cfd_class.sendMsg(command.To_Json()); 
+                cout << endl;
+                Command command_file_end(command.m_uid, SENDFILE, {command.m_option[0], filename, "end"});
+                ret = cfd_class.sendMsg(command_file_end.To_Json()); 
                 if(ret == 0 || ret == -1){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
-                }  
+                } 
                 string check_end = cfd_class.recvMsg();
-                if(check_end == "ok"){
-
+                if(check_end == "close"){
+                    cout << "服务器已关闭." << endl;
+                    exit(0);
+                }else if(check == "ok"){
                 }
+                continue;
             }
-            
             // 不是文件，就是消息，消息中不能含有空白
             bool ok = true;
             for(auto c : msg){

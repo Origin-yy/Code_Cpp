@@ -123,19 +123,16 @@ void taskfunc(void *arg){
         string buffer(argc_func->command_string, 512);
         cout << "文件内容：" << buffer << endl;
         cout << "文件内容大小：" << buffer.size() << endl;
-        cout << "000" << endl;
         command.m_flag = SENDFILE;
         command.m_uid = "无";
         command.m_option[0] = filepath;
         command.m_option[1] = buffer;
         command.m_option[2] = "file";
-        cout << "000" << endl;
     }
     // 否则是json字符串，解析得到命令内容
     else{
         command.From_Json(argc_func->command_string);    // 命令类将json字符串格式转为josn格式，再存到command类里
     }
-    cout << "000" << endl;
     //cout << command.m_uid << endl << command.m_flag << endl << command.m_option[0] << endl;
     switch (command.m_flag) {
         case LOGHIN_CHECK :
@@ -1265,7 +1262,6 @@ void InfoXXXX(TcpSocket cfd_class, Command command){
     return;
 }
 void SendFile(TcpSocket cfd_class, Command command){
-    cout << "000" << endl;
     // 如果第三个操作参数是“begin”，说明要发送文件了，先创建目录
     if(command.m_option[2] == "begin"){
         // 文件在服务器本地的存储目录和文件名，文件路径
@@ -1283,10 +1279,7 @@ void SendFile(TcpSocket cfd_class, Command command){
     }
     // 否则如果第三个操作数是“end”,说明文件已经全部传输完毕，处理结果
     else if(command.m_option[2] == "end"){
-        // 文件在服务器本地的存储目录和文件名，文件路径
-        string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_uid + "-" + command.m_option[0];
         string filename = command.m_option[1];
-        string File = command.m_option[0];
         // 将新的消息加入到我对他的消息队列
         string msg0 = "我发送了一个文件：" + filename + ".........." + GetNowTime();
         redis.lpush(command.m_uid + "--" + command.m_option[0], msg0);
@@ -1332,28 +1325,22 @@ void SendFile(TcpSocket cfd_class, Command command){
             TcpSocket friendFd_class(stoi(friend_recvfd));
             friendFd_class.sendMsg(command.m_uid + "发来了一个文件");
         }
+        redis.lpush(command.m_uid + "发给" + command.m_option[0] + "的文件", filename);
         cfd_class.sendMsg("ok");
     }
     // 否则发过来的是文件内容，就写到对应文件里
     else{
-        cout << "000" << endl;
         // 写入文件内容
         int filefd;
         int n;
         string buffer = command.m_option[1];
         string File = command.m_option[0];
         string filename(command.m_option[0], command.m_option[0].rfind("/"));
-        cout << File << endl;
-        cout << "here" << endl;
         if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
             cout << "文件打开失败." << endl;
             cfd_class.sendMsg("no");
         }
-        cout << "here" << endl;
-        cout << buffer << endl;
-        cout << "ok" << endl;
         n = write(filefd, buffer.c_str(), buffer.size());
-        cout << "here" << endl;
         if(n  < 0){
             cout << "write() failed." << endl;
             cfd_class.sendMsg("no");
@@ -1361,11 +1348,6 @@ void SendFile(TcpSocket cfd_class, Command command){
             cout << "文件写入成功." << endl;
             cfd_class.sendMsg("ok");
         }
-        // if(redis.hashexists(command.m_uid + "发给" + command.m_option[0] + "的文件", filename)){
-        //     string string_offset = redis.gethash(command.m_uid + "发给" + command.m_option[0] + "的文件", filename);
-        //     redis.hsetValue(command.m_uid + "发给" + command.m_option[0] + "的文件", filename, to_string(n + atoi(string_offset.c_str())));
-        // }else
-        //     redis.hsetValue(command.m_uid + "发给" + command.m_option[0] + "的文件", filename, to_string(n));
     }
 }
 void RecvFile(TcpSocket cfd_class, Command command){
