@@ -49,7 +49,7 @@ int main(){
     while(true) {
         int readyNum = epoll_wait(epfd, ep, 1024, -1);  // 有几个符就绪了
         for (int i = 0; i < readyNum; i++){  // 对于ep中每个就绪的符
-             // 如果是服务器的符，说明新客户端的交互/通知套接字连接，接入连接并把符扔进epoll,并在fd-uid表里加上该符，对应uid先为-1，在登录时在获得并写入uid
+            // 如果是服务器的符，说明新客户端的交互/通知套接字连接，接入连接并把符扔进epoll,并在fd-uid表里加上该符，对应uid先为-1，在登录时在获得并写入uid
             if (ep[i].data.fd == sfd_class.getfd()) { 
                 TcpSocket* cfd_class = sfd_class.acceptConn(NULL);
                 temp.data.fd = cfd_class->getfd();
@@ -64,7 +64,7 @@ int main(){
                 string command_string = cfd_class.recvMsg(); // 接收命令json字符串
                 cout << "接收到的命令字符串为：" << command_string << endl;
 
-                // 如果客户端挂了，socket类里关fd，并修改用户信息，摘符
+                // 如果命令字符串是说客户端挂了，socket类里关fd，并修改用户信息，摘符
                 if(command_string == "close" || command_string == "-1" || command_string == "quit"){
                     if(!redis.hashexists("fd-uid对应表", to_string(ep[i].data.fd))){
                         break;
@@ -81,19 +81,25 @@ int main(){
                     cout << "客户端断开连接" << endl;
                     continue;
                 }
-                
-                // 命令类将sring格式的字符串转为josn格式的字符串
-                Command command;
-                command.From_Json(command_string);
-                // 如果是通知套接字来消息，说明是告诉服务器该通知套接字属于哪个账号，更改这个账号的通知套接字并加在fd-uid对应表里，不运行任务函数
-                if(command.m_flag == SETRECVFD){
-                    redis.hsetValue(command.m_uid, "通知套接字", to_string(ep[i].data.fd));
-                    redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command.m_uid + "(通)");
-                }
-                else{// 不是通知套接字消息，说明是用户的命令，把命令和客户端套接字传进任务函数进行处理
-                    Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
-                    // 调用任务函数，传发过来的json字符串格式过去
+                // 如果第一个字符不是{，说明是文件内容，直接把后面的内容作为参数进入任务函数
+                else if(string(command_string, 0, 8) != "{\"flag\":"){
+                    Argc_func *argc_func = new Argc_func(cfd_class, command_string);
                     pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
+                }else{
+                    // 命令类将sring格式的字符串转为josn格式的字符串
+                    Command command;
+                    command.From_Json(command_string);
+                    // 如果是通知套接字来消息，说明是告诉服务器该通知套接字属于哪个账号，更改这个账号的通知套接字并加在fd-uid对应表里，不运行任务函数
+                    if(command.m_flag == SETRECVFD){
+                        redis.hsetValue(command.m_uid, "通知套接字", to_string(ep[i].data.fd));
+                        redis.hsetValue("fd-uid对应表", to_string(ep[i].data.fd), command.m_uid + "(通)");
+                    }
+                    // 不是通知套接字消息，说明是用户的命令，把命令和客户端套接字传进任务函数进行处理
+                    else{
+                        Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
+                        // 调用任务函数，传发过来的json字符串格式过去
+                        pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
+                    }
                 }
             }
         }

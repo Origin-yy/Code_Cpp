@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/sendfile.h>
 
 void my_error(const char* errorMsg);
 void *recvfunc(void* arg);
@@ -305,8 +306,10 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
 
             // 如果是发文件
             if(msg == "$"){
+                // 获得要发送的文件路径并告诉服务器去创建文件保存目录
                 string FilePath;
-                int fd;
+                string filepath;
+                int file_fd;
                 char buf[4096];
                 memset(buf, '\0', sizeof(buf));
                 cout << "请输入您想发送的文件绝对路径(#取消)：" << endl;
@@ -327,41 +330,86 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << UP << "文件路径中不能含有空白" << endl;
                     continue;
                 }
-                if((fd = open(FilePath.c_str(), O_RDONLY)) < 0){
+                string filename(FilePath, FilePath.rfind("/") + 1);
+                Command comamnd_filename(command.m_uid, SENDFILE, {command.m_option[0], filename, "begin"});
+                int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
+                if(ret == 0 || ret == -1){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }
+                string check_create = cfd_class.recvMsg();
+                if(check == "close"){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }else if(check_create == "no"){
+                    cout << "服务端创建文件存储目录出现错误." << endl;
+                    continue;
+                }
+                // 否则目录创建成功，返回的是文件在服务器端的存储目录，保存文件在服务器端的完整路径
+                else{
+                    filepath = check_create + "/" + filename;
+                }
+
+                // 直到服务器端成功创建文件服务器打开文件，然后循环发送文件内容
+                if((file_fd = open(FilePath.c_str(), O_RDONLY)) < 0){
                     cout << "文件打开失败或不存在该文件." << endl;
                     continue;
                 }
-                Command comamnd_file_begin(command.m_uid, SENDFILE, {command.m_option[0], FilePath, "begin"});
-                cfd_class.sendMsg(comamnd_file_begin.To_Json());
-                // 打开文件后循环发送文件内容，每次4096字节，直到发完
-                cout << "文件上传中..." << endl;
                 bool success = true;
-                while (true) {
-                    int len = read(fd, buf, 4096);
-                    if(len == -1){
-                        cout << "read() failed." << endl;
+                off_t offset = 0;
+                cout << "文件上传中..." << endl;
+                while(true){
+                    string rar(512, '#');
+                    string head = filepath + rar;
+                    char* buffer_t = new char[4097];
+                    memset(buffer_t, '\0', 4097);
+                    ssize_t count = read(file_fd, buffer_t, 4096);
+                    string buffer(buffer_t, 0, count);
+                    cout << buffer_t << endl;
+                    cout << buffer << endl;
+                    cout << "发送的内容：" << (string(head, 0, 512) + buffer).c_str() << endl;
+                    int n = cfd_class.sendMsg((string(head, 0, 512) + buffer).c_str());
+                    if(n < 0){
                         success = false;
-                        break; 
+                        break;
+                    }else if(n == 0){
+                        cout << "对端已关闭" << endl;
+                        exit(0);
+                    }else if(check == "close"){
+                        cout << "服务器已关闭." << endl; 
+                        exit(0);
                     }
-                    // buf[4096] = '\0';
-                    string buffer(buf, len);
-                    Command comamnd_file(command.m_uid, SENDFILE, {command.m_option[0], FilePath, buffer});
-                    cfd_class.sendMsg(comamnd_file.To_Json());
+                    offset += count;
+                    delete[] buffer_t;
+                    // 确认服务器端已经写入文件内容
                     string check = cfd_class.recvMsg();
-                    if(check != "ok"){
+                    if(check == "no"){
                         success = false;
                         break; 
+                    }else if(check == "close"){
+                        cout << "服务器已关闭." << endl;
+                        exit(0);
                     }
-                    if(len < 4096){
+                    if(count == 0){
                         break;
                     }
                 }
-                Command comamnd_file_end(command.m_uid, SENDFILE, {command.m_option[0], FilePath, "end"});
                 if(success == true)
                     cout << "文件上传完毕." << endl;
                 else
                     cout << "文件上传失败." << endl;
                 continue;
+                // 所有文件内容已经传输完毕，告诉服务器端进行收尾工作
+                Command comamnd_file_end(command.m_uid, SENDFILE, {command.m_option[0], filename, "end"});
+                ret = cfd_class.sendMsg(command.To_Json()); 
+                if(ret == 0 || ret == -1){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }  
+                string check_end = cfd_class.recvMsg();
+                if(check_end == "ok"){
+
+                }
             }
             
             // 不是文件，就是消息，消息中不能含有空白

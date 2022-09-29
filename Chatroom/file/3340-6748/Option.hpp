@@ -114,7 +114,7 @@ void taskfunc(void *arg){
     Command command("无", 100, {"空","空","空"});     // Command类存客户端的命令内容
     TcpSocket cfd_class = argc_func->cfd_class;      // TcpSocket类用于通信
     // 如果第一个字符不是{，说明不是json格式字符传，而是文件内容,手动构造命令
-    if(string(argc_func->command_string, 0, 8) != "{\"flag\":"){
+    if(argc_func->command_string[0] != '{'){
         cout << "整个字符串：" << argc_func->command_string << endl;
         cout << "整个字符串大小：" << argc_func->command_string.size() << endl;
         string filepath(argc_func->command_string, 0, argc_func->command_string.find("#"));
