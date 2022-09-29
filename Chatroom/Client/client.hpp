@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/sendfile.h>
+#include <sys/stat.h>
 
 void my_error(const char* errorMsg);
 void *recvfunc(void* arg);
@@ -306,16 +307,16 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
 
             // 如果是发文件
             if(msg == "$"){
-                // 获得要发送的文件路径并告诉服务器去创建文件保存目录
-                string FilePath;
+                // 获得要发送的文件路径
+                string File;
                 string filepath;
-                int file_fd;
+                int filefd;
                 char buf[4096];
                 memset(buf, '\0', sizeof(buf));
                 cout << L_WHITE << "请输入您想发送的文件绝对路径(#取消)：" << NONE << endl;
                 cin.sync();
-                getline(cin, FilePath);
-                if(FilePath == "#"){
+                getline(cin, File);
+                if(File == "#"){
                     cout << "已取消发送." << endl;
                     continue;
                 }
@@ -330,87 +331,110 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << UP << "文件路径中不能含有空白" << endl;
                     continue;
                 }
-                string filename(FilePath, FilePath.rfind("/") + 1);
-                Command comamnd_filename(command.m_uid, SENDFILE, {command.m_option[0], filename, "begin"});
+                // 打开文件，先告诉服务器文件名和文件大小，再传输文件内容
+                if((filefd = open(File.c_str(), O_RDONLY)) < 0){
+                    cout << "文件打开失败或不存在该文件." << endl;
+                    cfd_class.sendMsg("no");
+                }else{
+                    assert(filefd > 0);
+                    struct stat stat_buf;
+                    fstat(filefd, &stat_buf);
+                    string filename(File, File.rfind("/") + 1);
+                    Command comamnd_filename(command.m_uid, SENDFILE, {command.m_option[0], filename, to_string(stat_buf.st_size)});
+                    int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
+                    if(ret == 0 || ret == -1){
+                        cout << "服务器已关闭." << endl; 
+                        exit(0);
+                    }
+                    string check_create = cfd_class.recvMsg();
+                    if(check_create == "close"){
+                        cout << "服务器已关闭." << endl; 
+                        exit(0);
+                    }
+                    sendfile(cfd_class.getfd(), filefd, NULL, stat_buf.st_size);
+                    cout << "ok5" << endl;
+                    close(filefd);
+                }
+                continue;
+            }
+            // 如果是接收文件
+            if(msg == "&"){
+                // 获得要接收的文件名并告诉服务器去发送该文件
+                string filename;
+                string position;
+                cout << L_WHITE << "请输入您想接收的文件名(#取消)：" << NONE << endl;
+                cin.sync();
+                getline(cin, filename);
+                if(filename == "#"){
+                    cout << "已取消接收." << endl;
+                    continue;
+                }
+                bool ok = true;
+                for(auto c : msg){
+                    if(isspace(c)){
+                        ok = false;
+                        break;
+                    }
+                }
+                if(ok == false){
+                    cout << UP << "文件名中不能含有空白" << endl;
+                    continue;
+                }
+                Command comamnd_filename(command.m_uid, RECVFILE, {command.m_option[0], filename, "begin"});
                 int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
                 if(ret == 0 || ret == -1){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
                 }
-                string check_create = cfd_class.recvMsg();
-                if(check == "close"){
+                string check_begin = cfd_class.recvMsg();
+                if(check_begin == "close"){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
-                }else if(check_create == "no"){
-                    cout << "服务端创建文件存储目录出现错误." << endl;
+                }else if(check_begin == "no"){
+                    cout << "对方没有给您发送该文件." << endl;
                     continue;
                 }
-                // 否则目录创建成功，返回的是文件在服务器端的存储目录，保存文件在服务器端的完整路径
-                else{
-                    filepath = check_create + "/" + filename;
+                // 如果有这个文件，获取自己想要保存的文件位置
+                else if(check_begin == "ok"){
+                    cout << L_WHITE << "请输入文件的保存目录：" << NONE << endl;
+                    cin.sync();
+                    getline(cin, position);
+                    if(position == "#"){
+                        cout << "已取消接收." << endl;
+                        continue;
+                    }
+                    bool ok = true;
+                    for(auto c : msg){
+                        if(isspace(c)){
+                            ok = false;
+                            break;
+                        }
+                    }
+                    if(ok == false){
+                        cout << UP << "路径中中不能含有空白" << endl;
+                        continue;
+                    }
                 }
-
-                // 直到服务器端成功创建文件服务器打开文件，然后循环发送文件内容
-                if((file_fd = open(FilePath.c_str(), O_RDONLY)) < 0){
-                    cout << "文件打开失败或不存在该文件." << endl;
-                    continue;
+                // 写入文件内容
+                int filefd;
+                int n;
+                string File;
+                unsigned long size = 0;
+                if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
+                    cout << "文件打开失败." << endl;
                 }
-                bool success = true;
-                cout << L_WHITE << "文件上传中..." << NONE << endl;
-                while(true){
-                    string rar(512, '#');
-                    string head = filepath + rar;
-                    char* buffer_t = new char[4097];
-                    memset(buffer_t, 0, 4097);
-                    int count = read(file_fd, buffer_t, 4096);
-                    if(count == 0){
+                char buf[4096];
+                unsigned long len = 0;
+                while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
+                    unsigned long num = write(cfd_class.getfd(), buf, 4096);
+                    len += num;
+                    if(len == size){
                         break;
                     }
-                    string buffer(buffer_t, 0, count);
-                    int n = cfd_class.sendMsg((string(head, 0, 512) + buffer).c_str());
-                    if(n < 0){
-                        success = false;
-                        break;
-                    }else if(n == 0){
-                        cout << "对端已关闭" << endl;
-                        exit(0);
-                    }else if(check == "close"){
-                        cout << "服务器已关闭." << endl; 
-                        exit(0);
-                    }
-                    delete[] buffer_t;
-                    // 确认服务器端已经写入文件内容
-                    string check = cfd_class.recvMsg();
-                    if(check == "no"){
-                        success = false;
-                        break; 
-                    }else if(check == "close"){
-                        cout << "服务器已关闭." << endl;
-                        exit(0);
-                    }
                 }
-                if(success == true)
-                    cout << L_GREEN << "文件上传完毕." << NONE << endl;
-                else
-                    cout << L_RED << "文件上传失败." << NONE << endl;
-                close(file_fd);
-                // 所有文件内容已经传输完毕，告诉服务器端进行收尾工作
-                cout << endl;
-                Command command_file_end(command.m_uid, SENDFILE, {command.m_option[0], filename, "end"});
-                ret = cfd_class.sendMsg(command_file_end.To_Json()); 
-                if(ret == 0 || ret == -1){
-                    cout << "服务器已关闭." << endl; 
-                    exit(0);
-                } 
-                string check_end = cfd_class.recvMsg();
-                if(check_end == "close"){
-                    cout << "服务器已关闭." << endl;
-                    exit(0);
-                }else if(check == "ok"){
-                }
-                continue;
+                close(filefd);
             }
-            // 不是文件，就是消息，消息中不能含有空白
+            // 不是收发文件，就是消息，消息中不能含有空白
             bool ok = true;
             for(auto c : msg){
                 if(isspace(c)){

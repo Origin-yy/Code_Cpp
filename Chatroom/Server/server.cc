@@ -97,8 +97,14 @@ int main(){
                     // 不是通知套接字消息，说明是用户的命令，把命令和客户端套接字传进任务函数进行处理
                     else{
                         Argc_func *argc_func = new Argc_func(cfd_class, command_string);   
+                        // 摘符
+                        epoll_ctl(epfd, EPOLL_CTL_DEL, cfd_class.getfd(), &temp);
                         // 调用任务函数，传发过来的json字符串格式过去
                         pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
+                        // 上符
+                        temp.data.fd = cfd_class.getfd();
+                        temp.events = EPOLLIN;
+                        epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class.getfd(),&temp);
                     }
                 }
             }
