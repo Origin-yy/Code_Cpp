@@ -1251,13 +1251,10 @@ void SendFile(TcpSocket cfd_class, Command command){
     string File = filepath + "/" + filename;
     unsigned long size = atoi(command.m_option[2].c_str());
     string cmd = "777 " + filepath;
-    if(system(string("mkdir -m " + cmd).c_str()) < 0){
-        cfd_class.sendMsg("no");
-    }else{
-        cout << "目录已创建." << endl;
-        cout << "接收到的文件存储位置为："<<  File << endl;
-        cfd_class.sendMsg("ok");
-    }
+    system(string("mkdir -m " + cmd).c_str());
+    cout << "目录已创建." << endl;
+    cout << "接收到的文件存储位置为："<<  File << endl;
+    cfd_class.sendMsg("ok");
     // 写入文件内容
     int filefd;
     unsigned long n;
@@ -1270,8 +1267,9 @@ void SendFile(TcpSocket cfd_class, Command command){
     while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
         unsigned long sum = write(filefd, buf, n);
         size -= sum;
+        cout << "sum:" << sum << endl;
         cout << "size:" << size << endl;
-        if(size < 4096){
+        if(size == 4){
             break;
         }
     }

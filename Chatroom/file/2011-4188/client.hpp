@@ -112,7 +112,7 @@ string Login(TcpSocket cfd_class){
         // 登录成功就新建一个线程等回信
         pthread_t tid;
         RecvArg *recv_arg = new RecvArg(input_uid,cfd_class.getrecvfd());
-        ret = pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(recv_arg));
+    ret = pthread_create(&tid, NULL, &recvfunc, static_cast<void*>(recv_arg));
         if(ret != 0){
             my_error("pthread_create()");
             exit(0);

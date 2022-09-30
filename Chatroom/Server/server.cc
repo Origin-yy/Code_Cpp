@@ -104,7 +104,7 @@ int main(){
                         // 上符
                         temp.data.fd = cfd_class.getfd();
                         temp.events = EPOLLIN;
-                        epoll_ctl(epfd,EPOLL_CTL_ADD,cfd_class.getfd(),&temp);
+                        epoll_ctl(epfd, EPOLL_CTL_ADD, temp.data.fd, &temp);
                     }
                 }
             }
