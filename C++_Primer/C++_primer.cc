@@ -16,7 +16,6 @@
 
 extern const int i = 123; // a文件里定义并初始化i，加extern使其能被其他文件使用
 
-
 using namespace std; // 头文件不应包含using声明（名字冲突）
 
 #ifdef MIN
