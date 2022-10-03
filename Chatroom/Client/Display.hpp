@@ -38,7 +38,7 @@ void display_menu1(){
         << L_YELLOW << "**************chatroom**************" << NONE << endl;
 }
 void display_help(){
-
+    cout << L_YELLOW "*" << NONE << L_BLUE << "暂时还没想好帮助内容." << NONE << L_YELLOW "*" NONE << endl;
 }
 void display_menu2(){
         cout<< L_YELLOW << "***************聊天室***************" << NONE << endl
@@ -49,6 +49,8 @@ void display_menu2(){
         << L_YELLOW "*" << NONE << L_BLUE << "------------拒绝申请(deny-)-------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------设置权限(set-x-x)-----" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------移出成员(remove-)-----" << NONE << L_YELLOW "*" NONE << endl
+        << L_YELLOW "*" << NONE << L_BLUE << "------------解散群聊(dissolve)----" << NONE << L_YELLOW "*" NONE << endl
+        << L_YELLOW "*" << NONE << L_BLUE << "------------功能菜单(menu)--------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW "*" << NONE << L_BLUE << "------------退出群聊(exit)--------" << NONE << L_YELLOW "*" NONE << endl
         << L_YELLOW << "**************chatroom**************" << NONE << endl;
 }

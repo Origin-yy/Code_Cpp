@@ -41,6 +41,9 @@ using namespace std;
 #define EXITGROUPCHAT   31
 #define SENDFILE        32
 #define RECVFILE        33
+#define SENDFILE_G      34
+#define RECVFILE_G      35
+#define DISSOLVE        36
 
 string get_login();
 string get_uid();

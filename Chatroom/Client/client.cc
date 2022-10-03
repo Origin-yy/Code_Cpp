@@ -140,6 +140,9 @@ int main(){
         case REMOVEMEMBER :
             RemoveMember(cfd_class, command);
             break;
+        case DISSOLVE :
+            Dissolve(cfd_class, command);
+            break;
         case INFOXXXX :
             InfoXXXX(cfd_class, command);
             break;
