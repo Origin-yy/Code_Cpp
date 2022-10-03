@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <sys/epoll.h>
 
 #define SETRECVFD       -1
 #define QUIT             0
@@ -48,9 +49,13 @@
 #define EXITGROUPCHAT   31
 #define SENDFILE        32
 #define RECVFILE        33
+#define SENDFILE_G      34
+#define RECVFILE_G      35
+#define DISSOLVE        36
 
 using namespace std;
 extern Redis redis;
+extern int epfd;
 struct Argc_func{
 public:
     Argc_func(TcpSocket fd_class, string command_string) : cfd_class(fd_class), command_string(command_string) {}
@@ -94,6 +99,9 @@ void RemoveMember(TcpSocket cfd_class, Command command);
 void InfoXXXX(TcpSocket cfd_class, Command command);
 void SendFile(TcpSocket cfd_class, Command command);
 void RecvFile(TcpSocket cfd_class, Command command);
+void SendFile_G(TcpSocket cfd_class, Command command);
+void RecvFile_G(TcpSocket cfd_class, Command command);
+void Dissolve(TcpSocket cfd_class, Command command);
 
 void my_error(const char* errorMsg) {
     cout << errorMsg << endl;
@@ -214,7 +222,20 @@ void taskfunc(void *arg){
         case RECVFILE :
             RecvFile(cfd_class, command);
             break;
+        case SENDFILE_G :
+            SendFile_G(cfd_class, command);
+            break;
+        case RECVFILE_G :
+            RecvFile_G(cfd_class, command);
+            break;
+        case DISSOLVE :
+            Dissolve(cfd_class, command);
+            break;
         }
+    struct epoll_event temp;
+    temp.data.fd = cfd_class.getfd();
+    temp.events = EPOLLIN;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, cfd_class.getfd(), &temp);
 }
 void Login(TcpSocket cfd_class, Command command){
     // 从数据库调取对应数据进行核对，并回复结果
@@ -1220,8 +1241,8 @@ void RemoveMember(TcpSocket cfd_class, Command command){
     int num = redis.hlen(command.m_option[0] + "的群成员列表");
     redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
     for(int i = 0; i < num; i++){
-        string position = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
-        if(position == static_cast<string>("管理员") || position == static_cast<string>("群主")){
+        string position1 = redis.gethash(command.m_option[0] + "的群成员列表", members[i]->str);
+        if(position1 == static_cast<string>("管理员") || position1 == static_cast<string>("群主")){
             if(members[i]->str != command.m_uid){
                 string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
                 redis.hsetValue( members[i]->str + static_cast<string>("的未读消息"), "通知消息", to_string(stoi(num0)+1));
@@ -1249,9 +1270,14 @@ void SendFile(TcpSocket cfd_class, Command command){
     string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_uid + "-" + command.m_option[0];
     string filename = command.m_option[1];
     string File = filepath + "/" + filename;
+    system(string("rem -f " + File).c_str());
     unsigned long size = atoi(command.m_option[2].c_str());
+<<<<<<< HEAD
+    system(string("mkdir -m 777 " + filepath).c_str());
+=======
     string cmd = "777 " + filepath;
     system(string("mkdir -m " + cmd).c_str());
+>>>>>>> origin/main
     cout << "目录已创建." << endl;
     cout << "接收到的文件存储位置为："<<  File << endl;
     cfd_class.sendMsg("ok");
@@ -1269,14 +1295,17 @@ void SendFile(TcpSocket cfd_class, Command command){
         size -= sum;
         cout << "sum:" << sum << endl;
         cout << "size:" << size << endl;
+<<<<<<< HEAD
+        if(size == 0){
+=======
         if(size == 4){
+>>>>>>> origin/main
             break;
         }
     }
-    cout << "ok3" << endl;
     close(filefd);
     // 将新的消息加入到我对他的消息队列
-    string msg0 = "我发送了一个文件：" + filename + ".........." + GetNowTime();
+    string msg0 = "我发送了文件：" + filename + ".........." + GetNowTime();
     redis.lpush(command.m_uid + "--" + command.m_option[0], msg0);
     // 当前聊天界面展示我的消息
     string my_recvfd = redis.gethash(command.m_uid, "通知套接字");
@@ -1290,7 +1319,7 @@ void SendFile(TcpSocket cfd_class, Command command){
     }
     // 没有被屏蔽，消息加到他对我的消息队列，并给相应通知
     string name0 = redis.gethash(command.m_option[0] + "的好友列表", command.m_uid);  // 得到好友給我的备注
-    string msg1 = name0 + "发送了一个文件：" + filename + ".........." + GetNowTime();   
+    string msg1 = name0 + "发送了文件：" + filename + ".........." + GetNowTime();   
     redis.lpush(command.m_option[0] + "--" + command.m_uid, msg1);  // 把消息加入的好友的聊天队列
 
     // 如果好友把自己屏蔽的话，啥都不做，如果没有被屏蔽，就进行下面的操作：
@@ -1320,23 +1349,209 @@ void SendFile(TcpSocket cfd_class, Command command){
         TcpSocket friendFd_class(stoi(friend_recvfd));
         friendFd_class.sendMsg(command.m_uid + "发来了一个文件");
     }
-    redis.lpush(command.m_uid + "发给" + command.m_option[0] + "的文件", filename);
     cfd_class.sendMsg("ok");
 }
 void RecvFile(TcpSocket cfd_class, Command command){
+    // 从客户端得到文件名，得到文件保存位置
     string filename = command.m_option[1];
     string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_option[0] + "-" + command.m_uid;
-    string File = filepath + filename;
+    string File = filepath + "/" + filename;
+    // 打开文件，先告诉客户端文件大小，再传输文件内容
     int filefd;
+    cout << "File:" << File << endl;
     if((filefd = open(File.c_str(), O_RDONLY)) < 0){
         cout << "文件打开失败或不存在该文件." << endl;
-        cfd_class.sendMsg("no");
+        int ret = cfd_class.sendMsg("no");
+        if(ret == 0 || ret == -1){
+            cout << "对端已关闭." << endl; 
+            return;
+        }
     }else{
         assert(filefd > 0);
         struct stat stat_buf;
         fstat(filefd, &stat_buf);
+        int ret = cfd_class.sendMsg(to_string(stat_buf.st_size));
+        if(ret == 0 || ret == -1){
+            cout << "对端已关闭." << endl; 
+            return;
+        }
         sendfile(cfd_class.getfd(), filefd, NULL, stat_buf.st_size);
         close(filefd);
     }
+    cout << "文件发送成功." << endl; 
+    // 将新的消息加入到我对他的消息队列
+    string msg0 = "我接收了文件：" + filename + ".........." + GetNowTime();
+    redis.lpush(command.m_uid + "--" + command.m_option[0], msg0);
+    // 当前聊天界面展示我的消息
+    string my_recvfd = redis.gethash(command.m_uid, "通知套接字");
+    TcpSocket myFd_class(stoi(my_recvfd));
+    myFd_class.sendMsg(UP + msg0);
+    // 如果好友把自己屏蔽的话，什么都不做，直接返回
+    if(redis.scard(command.m_option[0] + "的屏蔽列表")){
+        if(redis.sismember(command.m_option[0] + "的屏蔽列表", command.m_uid)){
+            return;
+        }
+    }
+    // 没有被屏蔽，消息加到他对我的消息队列，并给相应通知
+    string name0 = redis.gethash(command.m_option[0] + "的好友列表", command.m_uid);  // 得到好友給我的备注
+    string msg1 = name0 + "接收了文件：" + filename + ".........." + GetNowTime();   
+    redis.lpush(command.m_option[0] + "--" + command.m_uid, msg1);  // 把消息加入的好友的聊天队列
+
+    // 如果好友把自己屏蔽的话，啥都不做，如果没有被屏蔽，就进行下面的操作：
+    // 如果好友在线且处于和自己的聊天界面，就把消息内容发给通知套接字
+    // 否则，把消息添加到未读消息里
+    // 如果好友在线但不处于和自己的聊天界面，把提示消息发给通知套接字
+    string online = redis.gethash(command.m_option[0], "在线状态");
+    string ChatFriend = redis.gethash(command.m_option[0], "聊天对象");
+    // 好友在线且和我聊天，让通知套接字展示消息，并返回
+    if(online != "-1" && ChatFriend == command.m_uid){   // 好友在线且和我聊天
+        string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+        TcpSocket friendFd_class(stoi(friend_recvfd));
+        string begin = "\r\n";
+        friendFd_class.sendMsg(begin + UP + msg1);
+    }
+    else{// 否则，好友的未读消息中的来自我的消息数量+1
+        if(redis.hashexists(command.m_option[0] + "的未读消息", "来自" + command.m_uid + "的未读消息")){
+            string num1 = redis.gethash(command.m_option[0] + "的未读消息", "来自" + command.m_uid + "的未读消息");
+            redis.hsetValue(command.m_option[0] + "的未读消息", "来自" + command.m_uid + "的未读消息", to_string(stoi(num1)+1));
+        }else{
+            redis.hsetValue(command.m_option[0] + "的未读消息", "来自" + command.m_uid + "的未读消息", "1");
+        }
+    }
+    // 如果好友在线但是没和我聊天，让通知套接字告知来消息
+    if(online != "-1" && ChatFriend != command.m_uid){  // 好友在线但没和我聊天
+        string friend_recvfd = redis.gethash(command.m_option[0], "通知套接字");
+        TcpSocket friendFd_class(stoi(friend_recvfd));
+        friendFd_class.sendMsg(command.m_uid + "接收了文件");
+    }
+    cfd_class.sendMsg("ok");
 }
-#endif 
+void SendFile_G(TcpSocket cfd_class, Command command){
+    // 文件在服务器本地的存储目录和文件名，文件路径
+    string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_uid + "-" + command.m_option[0];
+    string filename = command.m_option[1];
+    string File = filepath + "/" + filename;
+    system(string("rem -f " + File).c_str());
+    unsigned long size = atoi(command.m_option[2].c_str());
+    system(string("mkdir -m 777 " + filepath).c_str());
+    cout << "目录已创建." << endl;
+    cout << "接收到的文件存储位置为："<<  File << endl;
+    cfd_class.sendMsg("ok");
+    // 写入文件内容
+    int filefd;
+    unsigned long n;
+    if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
+        cout << "文件打开失败." << endl;
+    }
+    char buf[4096];
+    cout << "File:" << File << endl;
+    cout << "size:" << size << endl;
+    while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
+        unsigned long sum = write(filefd, buf, n);
+        size -= sum;
+        cout << "sum:" << sum << endl;
+        cout << "size:" << size << endl;
+        if(size == 0){
+            break;
+        }
+    }
+    close(filefd);
+    // 将新的消息加入到群聊消息队列
+    string msg0 = command.m_uid + "上传了文件：" + filename + ".........." + GetNowTime();
+    redis.lpush(command.m_option[0] + "的聊天消息队列", msg0);
+    // 当前聊天界面展示我的消息
+    string my_recvfd = redis.gethash(command.m_uid, "通知套接字");
+    TcpSocket myFd_class(stoi(my_recvfd));
+    string up = UP;
+    myFd_class.sendMsg(up + "我上传了文件：" + filename + ".........." + GetNowTime());
+    // 如果群成员的聊天对象不是该群，未读消息数+1
+    // 如果群成员的聊天对象不是该群，在线，给一个提示消息，不在线就不给
+    // 如果群成员的聊天对象是该群，通知套接字展示消息内容
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    for(int i = 0; i < num; i++){
+        if(members[i]->str != command.m_uid){
+            string online = redis.gethash(members[i]->str, "在线状态");
+            string Chatgroup = redis.gethash(members[i]->str, "聊天对象");
+            // 群成员在线且和我聊天，让通知套接字展示消息，并返回
+            if(online != "-1" && Chatgroup == command.m_option[0]){   // 群成员在线且和在群里聊天
+                string member_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                TcpSocket friendFd_class(stoi(member_recvfd));
+                string begin = "\r\n";
+                friendFd_class.sendMsg(begin + UP + msg0);
+            }
+            else{// 否则，群成员的未读消息中的来自群聊的消息数量+1    
+                if(redis.hashexists(static_cast<string>(members[i]->str) + "的未读消息", "来自" + command.m_option[0] + "的未读消息")){
+                    string num1 = redis.gethash(static_cast<string>(members[i]->str) + "的未读消息", "来自" + command.m_option[0] + "的未读消息");
+                    redis.hsetValue(static_cast<string>(members[i]->str) + "的未读消息", 
+                                    "来自" + command.m_option[0] + "的未读消息", to_string(stoi(num1)+1));                   
+                }else{
+                    redis.hsetValue(static_cast<string>(members[i]->str) + "的未读消息", "来自" + command.m_option[0] + "的未读消息", "1");
+                }
+            }
+            // 如果群成员在线但是没和我聊天，让通知套接字告知来消息
+            if(online != "-1" && Chatgroup != command.m_option[0]){  // 群成员在线但没在群里聊天
+                string member_recvfd = redis.gethash(members[i]->str, "通知套接字");
+                TcpSocket friendFd_class(stoi(member_recvfd));
+                friendFd_class.sendMsg(command.m_option[0] + "发来了一条消息");
+            }
+        }
+    }
+    cfd_class.sendMsg("ok");
+    return;
+}
+void RecvFile_G(TcpSocket cfd_class, Command command){
+    // 从客户端得到文件名，得到文件保存位置
+    string filename = command.m_option[1];
+    string filepath = "/home/yuanye/Code/Code_Cpp/Chatroom/file/" + command.m_option[0] + "-" + command.m_uid;
+    string File = filepath + "/" + filename;
+    // 打开文件，先告诉客户端文件大小，再传输文件内容
+    int filefd;
+    cout << "File:" << File << endl;
+    if((filefd = open(File.c_str(), O_RDONLY)) < 0){
+        cout << "文件打开失败或不存在该文件." << endl;
+        int ret = cfd_class.sendMsg("no");
+        if(ret == 0 || ret == -1){
+            cout << "对端已关闭." << endl; 
+            return;
+        }
+    }else{
+        assert(filefd > 0);
+        struct stat stat_buf;
+        fstat(filefd, &stat_buf);
+        int ret = cfd_class.sendMsg(to_string(stat_buf.st_size));
+        if(ret == 0 || ret == -1){
+            cout << "对端已关闭." << endl; 
+            return;
+        }
+        sendfile(cfd_class.getfd(), filefd, NULL, stat_buf.st_size);
+        close(filefd);
+    }
+    cout << "文件发送成功." << endl; 
+}
+void Dissolve(TcpSocket cfd_class, Command command){
+    // 如果不是群主，他无法解散群
+    string position = redis.gethash(command.m_option[0] + "的群成员列表", command.m_uid);
+    if(position != "群主"){
+        cfd_class.sendMsg("cannot");
+        return;
+    }
+    // 遍历群成员，在每个人的群聊列表里删除该群聊
+    int num = redis.hlen(command.m_option[0] + "的群成员列表");
+    redisReply** members = redis.hkeys(command.m_option[0] + "的群成员列表");
+    for(int i = 0; i < num; i++){
+        redis.delhash(members[i]->str + string("的群聊列表"), command.m_option[0]);
+        string num0 = redis.gethash( members[i]->str + static_cast<string>("的未读消息"), "通知消息");
+        redis.hsetValue( members[i]->str + string("的未读消息"), "通知消息", to_string(stoi(num0)+1));
+        redis.lpush(members[i]->str + static_cast<string>("的通知消息"), "您所在的群聊" + command.m_option[0] + "已被群主解散." + GetNowTime());
+        // 如果群主或者管理员在线，给他的通知套接字一个提醒
+        string online = redis.gethash(members[i]->str, "在线状态");
+        if(online != "-1"){
+            string friend_recvfd = redis.gethash(members[i]->str, "通知套接字");
+            TcpSocket friendFd_class(stoi(friend_recvfd));
+            friendFd_class.sendMsg("您所在的一个群聊：" + command.m_option[0] + "已被群主解散.");
+        }
+    }
+    cfd_class.sendMsg("ok");
+}
+#endif

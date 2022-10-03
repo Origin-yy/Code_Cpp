@@ -45,6 +45,7 @@ bool SetMember(TcpSocket cfd_class, Command command);
 bool ExitGroup(TcpSocket cfd_class, Command command);
 bool DisplyMember(TcpSocket cfd_class, Command command);
 bool RemoveMember(TcpSocket cfd_class, Command command);
+bool Dissolve(TcpSocket cfd_class, Command command);
 bool InfoXXXX(TcpSocket cfd_class, Command command);
 
 struct RecvArg{
@@ -286,9 +287,10 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                 cout << "服务器已关闭." << endl;
                 exit(0);
             } 
-            cout << HistoryMsg << endl;
             if(HistoryMsg == "以上为历史聊天记录"){
                 break;
+            }else{
+                cout << HistoryMsg << endl;
             }
         }
 
@@ -320,17 +322,6 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << "已取消发送." << endl;
                     continue;
                 }
-                bool ok = true;
-                for(auto c : msg){
-                    if(isspace(c)){
-                        ok = false;
-                        break;
-                    }
-                }
-                if(ok == false){
-                    cout << UP << "文件路径中不能含有空白" << endl;
-                    continue;
-                }
                 // 打开文件，先告诉服务器文件名和文件大小，再传输文件内容
                 if((filefd = open(File.c_str(), O_RDONLY)) < 0){
                     cout << "文件打开失败或不存在该文件." << endl;
@@ -351,7 +342,6 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                         exit(0);
                     }
                     sendfile(cfd_class.getfd(), filefd, NULL, stat_buf.st_size);
-                    cout << "ok5" << endl;
                     close(filefd);
                 }
                 string check = cfd_class.recvMsg();
@@ -359,85 +349,62 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
                 }
+<<<<<<< HEAD
+                //cout << L_WHITE << "文件上传成功." << NONE << endl; 
+=======
                 cout << "文件上传成功." << endl; 
+>>>>>>> origin/main
                 continue;
             }
             // 如果是接收文件
             if(msg == "&"){
-                // 获得要接收的文件名并告诉服务器去发送该文件
-                string filename;
-                string position;
-                cout << L_WHITE << "请输入您想接收的文件名(#取消)：" << NONE << endl;
+                // 获得要发送的文件路径
+                string File;
+                string filepath;
+                cout << L_WHITE << "请输入您想接收的文件保存位置(#取消)：" << NONE << endl;
                 cin.sync();
-                getline(cin, filename);
-                if(filename == "#"){
+                getline(cin, File);
+                if(File == "#"){
                     cout << "已取消接收." << endl;
                     continue;
                 }
-                bool ok = true;
-                for(auto c : msg){
-                    if(isspace(c)){
-                        ok = false;
-                        break;
-                    }
-                }
-                if(ok == false){
-                    cout << UP << "文件名中不能含有空白" << endl;
-                    continue;
-                }
+                string filename(File, File.rfind("/") + 1);
                 Command comamnd_filename(command.m_uid, RECVFILE, {command.m_option[0], filename, "begin"});
                 int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
                 if(ret == 0 || ret == -1){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
                 }
+                unsigned long size;
                 string check_begin = cfd_class.recvMsg();
                 if(check_begin == "close"){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
                 }else if(check_begin == "no"){
-                    cout << "对方没有给您发送该文件." << endl;
-                    continue;
-                }
-                // 如果有这个文件，获取自己想要保存的文件位置
-                else if(check_begin == "ok"){
-                    cout << L_WHITE << "请输入文件的保存目录：" << NONE << endl;
-                    cin.sync();
-                    getline(cin, position);
-                    if(position == "#"){
-                        cout << "已取消接收." << endl;
-                        continue;
-                    }
-                    bool ok = true;
-                    for(auto c : msg){
-                        if(isspace(c)){
-                            ok = false;
-                            break;
-                        }
-                    }
-                    if(ok == false){
-                        cout << UP << "路径中中不能含有空白" << endl;
-                        continue;
-                    }
+                    cout << "对方未给您发送该文件." << endl;
+                    continue; 
+                }else{
+                    size = atoi(check_begin.c_str());
+                    cout << "文件大小：" << size << "字节" <<  endl;
                 }
                 // 写入文件内容
                 int filefd;
-                int n;
-                string File;
-                unsigned long size = 0;
+                unsigned long n;
                 if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
                     cout << "文件打开失败." << endl;
                 }
                 char buf[4096];
-                unsigned long len = 0;
+                cout << "文件接收中." << endl;
                 while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
-                    unsigned long num = write(cfd_class.getfd(), buf, 4096);
-                    len += num;
-                    if(len == size){
+                    unsigned long sum = write(filefd, buf, n);
+                    size -= sum;
+                    if(size == 0){
                         break;
                     }
                 }
+                cout << "文件接收成功." << endl;
                 close(filefd);
+                continue;
             }
             // 不是收发文件，就是消息，消息中不能含有空白
             bool ok = true;
@@ -515,6 +482,101 @@ bool ChatGroup(TcpSocket cfd_class, Command command){
                 ExitChatGroup(cfd_class, command_exit);
                 break;
             }
+            // 如果是发文件
+            if(msg == "$"){
+                // 获得要发送的文件路径
+                string File;
+                string filepath;
+                int filefd;
+                char buf[4096];
+                memset(buf, '\0', sizeof(buf));
+                cout << L_WHITE << "请输入您想发送的文件绝对路径(#取消)：" << NONE << endl;
+                cin.sync();
+                getline(cin, File);
+                if(File == "#"){
+                    cout << "已取消发送." << endl;
+                    continue;
+                }
+                // 打开文件，先告诉服务器文件名和文件大小，再传输文件内容
+                if((filefd = open(File.c_str(), O_RDONLY)) < 0){
+                    cout << "文件打开失败或不存在该文件." << endl;
+                }else{
+                    assert(filefd > 0);
+                    struct stat stat_buf;
+                    fstat(filefd, &stat_buf);
+                    string filename(File, File.rfind("/") + 1);
+                    Command comamnd_filename(command.m_uid, SENDFILE, {command.m_option[0], filename, to_string(stat_buf.st_size)});
+                    int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
+                    if(ret == 0 || ret == -1){
+                        cout << "服务器已关闭." << endl; 
+                        exit(0);
+                    }
+                    string check_create = cfd_class.recvMsg();
+                    if(check_create == "close"){
+                        cout << "服务器已关闭." << endl; 
+                        exit(0);
+                    }
+                    sendfile(cfd_class.getfd(), filefd, NULL, stat_buf.st_size);
+                    close(filefd);
+                }
+                string check = cfd_class.recvMsg();
+                if(check == "close"){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }
+                //cout << L_WHITE << "文件上传成功." << NONE << endl; 
+                continue;
+            }
+            // 如果是接收文件
+            if(msg == "&"){
+                // 获得要发送的文件路径
+                string File;
+                string filepath;
+                cout << L_WHITE << "请输入您想接收的文件保存位置(#取消)：" << NONE << endl;
+                cin.sync();
+                getline(cin, File);
+                if(File == "#"){
+                    cout << "已取消接收." << endl;
+                    continue;
+                }
+                string filename(File, File.rfind("/") + 1);
+                Command comamnd_filename(command.m_uid, RECVFILE_G, {command.m_option[0], filename, "begin"});
+                int ret = cfd_class.sendMsg(comamnd_filename.To_Json());
+                if(ret == 0 || ret == -1){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }
+                unsigned long size;
+                string check_begin = cfd_class.recvMsg();
+                if(check_begin == "close"){
+                    cout << "服务器已关闭." << endl; 
+                    exit(0);
+                }else if(check_begin == "no"){
+                    cout << "对方未给您发送该文件." << endl;
+                    continue; 
+                }else{
+                    size = atoi(check_begin.c_str());
+                    cout << "文件大小：" << size << "字节" <<  endl;
+                }
+                // 写入文件内容
+                int filefd;
+                unsigned long n;
+                if((filefd = open(File.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IRWXU)) < 0){
+                    cout << "文件打开失败." << endl;
+                }
+                char buf[4096];
+                cout << "文件接收中." << endl;
+                while((n = read(cfd_class.getfd(), buf, 4096)) > 0){
+                    unsigned long sum = write(filefd, buf, n);
+                    size -= sum;
+                    if(size == 0){
+                        break;
+                    }
+                }
+                cout << "文件接收成功." << endl;
+                close(filefd);
+                continue;
+            }
             // 消息中不能含有空白
             bool ok = true;
             for(auto c : msg){
@@ -524,7 +586,7 @@ bool ChatGroup(TcpSocket cfd_class, Command command){
                 }
             }
             if(ok == false){
-                cout << "消息中不能含有空白" << endl;
+                cout << L_WHITE << "消息中不能含有空白" << NONE << endl;
                 continue;
             }
             // 把消息包装好，让服务器转发
@@ -818,7 +880,7 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
         cout << "服务器已关闭." << endl;
         exit (0);
     }else if(check == "ok"){
-        cout << "关于群聊" << command.m_option[0] << "：" << endl;
+
     }else if(check == "nohave"){
         cout << "该群聊不存在" << endl;
         return false;
@@ -827,14 +889,14 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
         return false;
     }
     string option0 = command.m_option[0];   // 选项第一个为想要操作的群聊
-    // while循环不断展示选项和获取操作
+    // while循环不断获取操作
     while(true){
-        display_menu2();
+        //display_menu2();
         string input;
-        cout << L_WHITE << "就决定是你了：" << NONE << endl;
+        cout << "关于群聊" << command.m_option[0] << "：" << endl;
         cin.sync();
         getline(cin, input);
-
+        system("clear");
         if(input == "return"){
             break;
         }
@@ -899,6 +961,22 @@ bool AboutGroup(TcpSocket cfd_class, Command command){
             string option0 = command.m_option[0];
             Command command1(command.m_uid, INFOXXXX, {option0});
             InfoXXXX(cfd_class, command1);
+        }
+        else if(input == "menu"){
+            display_menu2();
+            continue;
+        }
+        else if(input == "dissolve"){
+            cout << L_WHITE << "您确定要解散群聊吗？(y/n)" << NONE << endl;
+            string state;
+            getline(cin, state);
+            if(state != "y"){
+                continue;
+            }
+            string option0 = command.m_option[0];
+            Command command1(command.m_uid, DISSOLVE, {option0});
+            Dissolve(cfd_class, command1);
+            break;
         }else{
             cout << "无效的操作，请重新输入." << endl;
             continue;
@@ -1092,6 +1170,28 @@ bool RemoveMember(TcpSocket cfd_class, Command command){
         cout << "其他错误." << endl;
         return false;
     }
+}
+bool Dissolve(TcpSocket cfd_class, Command command){
+    int ret = cfd_class.sendMsg(command.To_Json());
+    if(ret == 0 || ret == -1){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }
+    string check = cfd_class.recvMsg();
+    if(check == "close"){
+        cout << "服务器已关闭." << endl;
+        exit (0);
+    }else if(check == "ok"){
+        cout << "已解散该群聊." << endl;
+        return false;
+    }else if(check == "cannot"){
+        cout << "您没有此权限." << endl;
+        return false;
+    }else{
+        cout << "其他错误." << endl;
+        return false;
+    }
+    return true;
 }
 bool InfoXXXX(TcpSocket cfd_class, Command command){
 

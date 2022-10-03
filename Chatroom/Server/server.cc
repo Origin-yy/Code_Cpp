@@ -7,14 +7,13 @@
 #include <ctime>
 #include <iomanip>
 #include <netinet/in.h>
-#include <sys/epoll.h>
 #include <bits/types/time_t.h>
 
 #define LOCALPORT 6666
 
+int epfd;
 Redis redis;
 using namespace std;
-
 
 int main(){
     // 连接redis服务端
@@ -35,7 +34,7 @@ int main(){
     if(ret == -1) {exit(1);}
 
     // 创建epoll实例，并把listenfd加进去，监视可读事件
-    int epfd = epoll_create(5);
+    epfd = epoll_create(5);
     if(epfd == -1) { exit(1); }
     struct epoll_event temp,ep[1024];
     temp.data.fd = sfd_class.getfd();
@@ -81,11 +80,7 @@ int main(){
                     cout << "客户端断开连接" << endl;
                     continue;
                 }
-                // 如果第一个字符不是{，说明是文件内容，直接把后面的内容作为参数进入任务函数
-                else if(string(command_string, 0, 8) != "{\"flag\":"){
-                    Argc_func *argc_func = new Argc_func(cfd_class, command_string);
-                    pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
-                }else{
+                else{
                     // 命令类将sring格式的字符串转为josn格式的字符串
                     Command command;
                     command.From_Json(command_string);
@@ -101,10 +96,13 @@ int main(){
                         epoll_ctl(epfd, EPOLL_CTL_DEL, cfd_class.getfd(), &temp);
                         // 调用任务函数，传发过来的json字符串格式过去
                         pool.addTask(Task<Argc_func>(&taskfunc,static_cast<void*>(argc_func)));
+<<<<<<< HEAD
+=======
                         // 上符
                         temp.data.fd = cfd_class.getfd();
                         temp.events = EPOLLIN;
                         epoll_ctl(epfd, EPOLL_CTL_ADD, temp.data.fd, &temp);
+>>>>>>> origin/main
                     }
                 }
             }
