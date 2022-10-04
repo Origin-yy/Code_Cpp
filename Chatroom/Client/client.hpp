@@ -349,11 +349,7 @@ bool ChatFriend(TcpSocket cfd_class, Command command){
                     cout << "服务器已关闭." << endl; 
                     exit(0);
                 }
-<<<<<<< HEAD
-                //cout << L_WHITE << "文件上传成功." << NONE << endl; 
-=======
                 cout << "文件上传成功." << endl; 
->>>>>>> origin/main
                 continue;
             }
             // 如果是接收文件
