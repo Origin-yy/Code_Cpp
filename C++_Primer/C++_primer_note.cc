@@ -337,7 +337,6 @@ int main() {
   return 0;
 }
 
-
 /*
   #ifndef SALES_DATA_H
   #define SALES_DATA_H
