@@ -1,31 +1,34 @@
-#include<stdio.h>
+#include <stdio.h>
 
-struct test
-{
-    long int a;
-    int b;
-    int c;
-}stu[1001];
+void bingbao(int n);
 
-int main()
-{
-    int n,i,m,p[1000];
-    scanf("%d",&n);
-    for(i=0;i<n;i++)
-    {
-        scanf("%ld %d %d",&stu[i].a,&stu[i].b,&stu[i].c);
+int main() {
+  int n;
+  int arr[100];
+  int cnt = 0;
+  scanf("%d", &n);
+  bingbao(n);
+  return 0;
+}
+void bingbao(int n) {
+  int arr[100];
+  int cnt = 0;
+  if (n == 1) {
+    printf(" 1 ");
+    return;
+  }
+  while (n > 1) {
+    if (n % 2 == 1) {
+      n = n * 3 + 1;
+      arr[cnt] = n;
+    } else {
+      n = n / 2;
+      arr[cnt] = n;
     }
-    scanf("%d",&m);
-    for(i=0;i<m;i++)
-    {
-        scanf("%d",&p[i]);
-    }
-    for(i=0;i<m;i++)
-    {
-        for(int j=0;j<n;j++)
-        {
-            if(p[i]==stu[j].b)
-                printf("%ld %d\n",stu[j].a,stu[j].c);
-        }
-    }
+    cnt++;
+  }
+  cnt --;
+  for (; cnt >= 0; cnt--) {
+    printf(" %d ", arr[cnt]);
+  }
 }
