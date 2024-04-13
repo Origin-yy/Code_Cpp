@@ -3,17 +3,16 @@
 
 #include "../lib/TCPSocket.hpp"
 
-class TcpServer
-{
+class TcpServer {
 public:
-    TcpServer();
-    ~TcpServer();
-    int getfd() const {return m_fd;}
-    int setListen(unsigned short port);
-    TcpSocket* acceptConn(struct sockaddr_in* addr = nullptr);
+  TcpServer();
+  ~TcpServer();
+  int getfd() const { return m_fd; }
+  int setListen(unsigned short port);
+  TcpSocket *acceptConn(struct sockaddr_in *addr = nullptr);
 
 private:
-    int m_fd;	// 监听的套接字
+  int m_fd; // 监听的套接字
 };
 
 #endif
